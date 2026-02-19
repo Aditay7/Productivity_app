@@ -1,0 +1,28 @@
+{
+  "name": "solo-levelup-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Solo Leveling app using Express and MongoDB",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/utils/seed.js"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "mongoose": "^8.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}

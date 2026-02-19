@@ -1,0 +1,419 @@
+import { Quest } from '../models/Quest.js';
+import { QuestTemplate } from '../models/QuestTemplate.js';
+import { AppError } from '../middleware/error.middleware.js';
+import playerService from './player.service.js';
+
+export class QuestService {
+    /**
+     * Create a new quest
+     */
+    async createQuest(data) {
+        const quest = await Quest.create(data);
+        return quest;
+    }
+
+    /**
+     * Get all quests with optional filters
+     */
+    async getAllQuests(filters = {}) {
+        // Lazy generation: Check for recurring quests due today
+        await this._generateDailyQuestsFromTemplates();
+
+        const query = {};
+
+        if (filters.isCompleted !== undefined) {
+            query.isCompleted = filters.isCompleted;
+        }
+
+        if (filters.statType) {
+            query.statType = filters.statType;
+        }
+
+        if (filters.templateId) {
+            query.templateId = filters.templateId;
+        }
+
+        if (filters.startDate || filters.endDate) {
+            query.dateCreated = {};
+            if (filters.startDate) {
+                query.dateCreated.$gte = new Date(filters.startDate);
+            }
+            if (filters.endDate) {
+                query.dateCreated.$lte = new Date(filters.endDate);
+            }
+        }
+
+        return await Quest.find(query)
+            .sort({ dateCreated: -1 });
+    }
+
+    /**
+     * Get quest by ID
+     */
+    async getQuestById(id) {
+        const quest = await Quest.findById(id);
+
+        if (!quest) {
+            throw new AppError(404, 'Quest not found');
+        }
+
+        return quest;
+    }
+
+    /**
+     * Get today's quests
+     */
+    async getTodayQuests() {
+        // Lazy generation: Check for recurring quests due today
+        await this._generateDailyQuestsFromTemplates();
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        return await Quest.find({
+            dateCreated: {
+                $gte: today,
+                $lt: tomorrow,
+            },
+        })
+            .sort({ dateCreated: -1 });
+    }
+
+    /**
+     * Update quest
+     */
+    async updateQuest(id, data) {
+        const quest = await Quest.findByIdAndUpdate(id, data, { new: true }).populate('templateId');
+
+        if (!quest) {
+            throw new AppError(404, 'Quest not found');
+        }
+
+        return quest;
+    }
+
+    /**
+     * Complete a quest
+     */
+    async completeQuest(id) {
+        const quest = await this.getQuestById(id);
+
+        if (quest.isCompleted) {
+            // Idempotency: If already completed, return success
+            const populatedQuest = await quest.populate('templateId');
+            return {
+                quest: populatedQuest,
+                skillResult: null
+            };
+        }
+
+        // Get current player for streak
+        const player = await playerService.getPlayer();
+
+        // Update quest
+        quest.isCompleted = true;
+        quest.dateCompleted = new Date();
+        quest.completionTimeOfDay = new Date().getHours(); // Store hour of completion
+        quest.streakAtCompletion = player.currentStreak;
+        await quest.save();
+
+        // Add XP to player (legacy)
+        await playerService.addXP(quest.xpReward, quest.statType);
+
+        // Add XP to skill category if specified
+        let skillResult = null;
+        if (quest.skillCategory) {
+            const skillService = (await import('./skill.service.js')).default;
+            skillResult = await skillService.addSkillXP(quest.skillCategory, quest.xpReward);
+        }
+
+        const populatedQuest = await quest.populate('templateId');
+
+        return {
+            quest: populatedQuest,
+            skillResult // Contains: { skill, leveledUp, oldLevel, newLevel, newPerks }
+        };
+    }
+
+    /**
+     * Delete quest
+     */
+    async deleteQuest(id) {
+        const quest = await Quest.findByIdAndDelete(id);
+
+        if (!quest) {
+            throw new AppError(404, 'Quest not found');
+        }
+    }
+
+    /**
+     * Get completed quests count
+     */
+    async getCompletedCount() {
+        return await Quest.countDocuments({ isCompleted: true });
+    }
+
+    /**
+     * Start quest timer
+     */
+    async startQuestTimer(id) {
+        const quest = await this.getQuestById(id);
+
+        if (quest.isCompleted) {
+            throw new AppError(400, 'Cannot start timer on completed quest');
+        }
+
+        if (quest.timerState === 'running') {
+            throw new AppError(400, 'Timer is already running');
+        }
+
+        quest.timerState = 'running';
+        quest.timeStarted = new Date();
+        quest.timePaused = null;
+
+        await quest.save();
+        return quest;
+    }
+
+    /**
+     * Pause quest timer
+     */
+    async pauseQuestTimer(id) {
+        const quest = await this.getQuestById(id);
+
+        if (quest.timerState !== 'running') {
+            throw new AppError(400, 'Timer is not running');
+        }
+
+        quest.timerState = 'paused';
+        quest.timePaused = new Date();
+        quest.distractionCount += 1;
+
+        await quest.save();
+        return quest;
+    }
+
+    /**
+     * Resume quest timer
+     */
+    async resumeQuestTimer(id) {
+        const quest = await this.getQuestById(id);
+
+        if (quest.timerState !== 'paused') {
+            throw new AppError(400, 'Timer is not paused');
+        }
+
+        // Calculate paused duration
+        if (quest.timePaused) {
+            const pausedMs = new Date() - quest.timePaused;
+            quest.pausedDuration += pausedMs;
+        }
+
+        quest.timerState = 'running';
+        quest.timePaused = null;
+
+        await quest.save();
+        return quest;
+    }
+
+    /**
+     * Stop quest timer (without completing)
+     */
+    async stopQuestTimer(id, focusRating = null) {
+        const quest = await this.getQuestById(id);
+
+        if (quest.timerState === 'not_started' || quest.timerState === 'completed') {
+            throw new AppError(400, 'Timer is not active');
+        }
+
+        // Calculate actual time
+        const now = new Date();
+        let totalMs = now - quest.timeStarted;
+
+        // Subtract paused duration
+        if (quest.timerState === 'paused' && quest.timePaused) {
+            totalMs -= (now - quest.timePaused);
+        }
+        totalMs -= quest.pausedDuration;
+
+        quest.timeActualMinutes = Math.round(totalMs / 60000); // Convert to minutes
+        quest.timerState = 'completed';
+        quest.focusRating = focusRating;
+
+        // Calculate productivity scores
+        const scores = this.calculateProductivityScore(
+            quest.timeEstimatedMinutes,
+            quest.timeActualMinutes,
+            focusRating,
+            quest.distractionCount
+        );
+        quest.accuracyScore = scores.accuracyScore;
+        quest.productivityScore = scores.productivityScore;
+
+        await quest.save();
+        return quest;
+    }
+
+    /**
+     * Complete quest with timer data
+     */
+    async completeQuestWithTimer(id, focusRating = null) {
+        // First stop the timer if running
+        const quest = await this.getQuestById(id);
+
+        if (quest.timerState === 'running' || quest.timerState === 'paused') {
+            await this.stopQuestTimer(id, focusRating);
+        }
+
+        // Then complete the quest
+        return await this.completeQuest(id);
+    }
+
+    /**
+     * Calculate productivity score
+     */
+    calculateProductivityScore(estimatedMinutes, actualMinutes, focusRating = null, distractionCount = 0) {
+        // Accuracy Score (0-100): How close actual time was to estimated
+        let accuracyScore = 0;
+        if (actualMinutes > 0) {
+            const ratio = Math.min(estimatedMinutes, actualMinutes) / Math.max(estimatedMinutes, actualMinutes);
+            accuracyScore = Math.round(ratio * 100);
+        }
+
+        // Productivity Score (0-100): Weighted combination of factors
+        let productivityScore = accuracyScore * 0.4; // 40% weight on accuracy
+
+        // Focus rating (1-5) contributes 40%
+        if (focusRating) {
+            productivityScore += (focusRating / 5) * 40;
+        } else {
+            productivityScore += 20; // Neutral if not rated
+        }
+
+        // Distraction penalty (20% weight)
+        const distractionPenalty = Math.min(distractionCount * 5, 20); // Max 20% penalty
+        productivityScore += (20 - distractionPenalty);
+
+        return {
+            accuracyScore: Math.round(accuracyScore),
+            productivityScore: Math.round(Math.max(0, Math.min(100, productivityScore)))
+        };
+    }
+
+    /**
+     * Check and mark overdue quests
+     */
+    async checkOverdueQuests() {
+        const now = new Date();
+
+        const result = await Quest.updateMany(
+            {
+                isCompleted: false,
+                deadline: { $lt: now, $ne: null },
+                isOverdue: false
+            },
+            {
+                $set: { isOverdue: true }
+            }
+        );
+
+        return result.modifiedCount;
+    }
+
+    /**
+     * Get overdue quests
+     */
+    async getOverdueQuests() {
+        return await Quest.find({
+            isCompleted: false,
+            isOverdue: true
+        }).sort({ deadline: 1 });
+    }
+
+    /**
+     * Get quests due soon (within next 24 hours)
+     */
+    async getDueSoonQuests() {
+        const now = new Date();
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+        return await Quest.find({
+            isCompleted: false,
+            deadline: { $gte: now, $lte: tomorrow }
+        }).sort({ deadline: 1 });
+    }
+
+    /**
+     * Internal: Generate daily quests from active templates
+     */
+    async _generateDailyQuestsFromTemplates() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Find active templates
+        const templates = await QuestTemplate.find({ isActive: true });
+
+        let dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        if (dayOfWeek === 0) dayOfWeek = 7; // Convert Sunday to 7 to match frontend (Mon=1...Sun=7)
+
+        for (const template of templates) {
+            // Check if already generated for today
+            if (template.lastGeneratedDate) {
+                const lastGen = new Date(template.lastGeneratedDate);
+                lastGen.setHours(0, 0, 0, 0);
+                if (lastGen.getTime() === today.getTime()) {
+                    continue; // Already generated today
+                }
+            }
+
+            let shouldGenerate = false;
+
+            if (template.recurrenceType === 'daily') {
+                shouldGenerate = true;
+            } else if (template.recurrenceType === 'specific_days' || template.recurrenceType === 'weekly') {
+                // Check if today matches specified weekdays
+                // Handle both 1-7 (ISO) and 0-6 (JS) formats if necessary, 
+                // but usually sticking to one standard is best.
+                // Assuming stored weekdays matches JS getDay() (0-6)
+                if (template.weekdays && template.weekdays.includes(dayOfWeek)) {
+                    shouldGenerate = true;
+                }
+            } else if (template.recurrenceType === 'interval') {
+                // Check if enough days have passed
+                if (template.lastGeneratedDate) {
+                    const lastGen = new Date(template.lastGeneratedDate);
+                    lastGen.setHours(0, 0, 0, 0);
+                    const diffDays = Math.floor((today - lastGen) / (1000 * 60 * 60 * 24));
+                    if (diffDays >= template.customDays) {
+                        shouldGenerate = true;
+                    }
+                } else {
+                    shouldGenerate = true; // First time
+                }
+            }
+
+            if (shouldGenerate) {
+                // Create quest from template
+                await Quest.create({
+                    title: template.title,
+                    description: template.description || '',
+                    statType: template.statType,
+                    difficulty: parseInt(template.difficulty) || 1, // Ensure number
+                    timeEstimatedMinutes: template.timeMinutes,
+                    xpReward: 10 * (parseInt(template.difficulty) || 1), // Simple calculation
+                    dateCreated: new Date(),
+                    templateId: template._id,
+                    isTemplateInstance: true
+                });
+
+                // Update template
+                template.lastGeneratedDate = new Date();
+                await template.save();
+            }
+        }
+    }
+}
+
+export default new QuestService();
