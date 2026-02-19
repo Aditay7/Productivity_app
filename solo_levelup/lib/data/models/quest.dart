@@ -114,10 +114,18 @@ class Quest {
       templateIdValue = templateIdRaw.toString();
     }
 
+    // Safe timerState parsing
+    final timerStateRaw = map['timerState'] ?? map['timer_state'];
+    final timerState = timerStateRaw != null
+        ? TimerState.fromString(timerStateRaw as String)
+        : TimerState.notStarted;
+
     return Quest(
       id: questId,
       title: map['title'] as String,
-      description: (map['description'] as String?) ?? '',
+      description: map['description'] != null 
+          ? (map['description'] as String?) ?? '' 
+          : '',
       statType: StatType.fromString(
         (map['statType'] ?? map['stat_type']) as String,
       ),
@@ -139,11 +147,7 @@ class Quest {
           ? DateTime.parse((map['timePaused'] ?? map['time_paused']) as String)
           : null,
       pausedDuration: (map['pausedDuration'] ?? map['paused_duration']) as int?,
-      timerState: map['timerState'] != null || map['timer_state'] != null
-          ? TimerState.fromString(
-              (map['timerState'] ?? map['timer_state']) as String,
-            )
-          : TimerState.notStarted,
+      timerState: timerState,
       deadline: (map['deadline']) != null
           ? DateTime.parse(map['deadline'] as String)
           : null,

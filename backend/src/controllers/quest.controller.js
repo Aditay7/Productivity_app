@@ -122,11 +122,12 @@ export class QuestController {
      */
     async completeQuest(req, res, next) {
         try {
-            const quest = await questService.completeQuest(req.params.id);
+            const result = await questService.completeQuest(req.params.id);
 
             res.json({
                 success: true,
-                data: quest,
+                data: result.quest,
+                skillResult: result.skillResult,
                 message: 'Quest completed successfully',
             });
         } catch (error) {

@@ -390,7 +390,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
 
       await questRepo.completeQuest(questId);
 
-      // Update player stats
+      // Update player stats and quests - this will trigger UI refresh
       ref.invalidate(playerProvider);
       ref.invalidate(questProvider);
 
@@ -404,9 +404,18 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
         );
       }
     } catch (e) {
+      // Even if there's an error parsing response, refresh the quests
+      // because the backend might have completed it successfully
+      ref.invalidate(playerProvider);
+      ref.invalidate(questProvider);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {

@@ -102,9 +102,8 @@ export class QuestService {
 
         if (quest.isCompleted) {
             // Idempotency: If already completed, return success
-            const populatedQuest = await quest.populate('templateId');
             return {
-                quest: populatedQuest,
+                quest: quest,
                 skillResult: null
             };
         }
@@ -129,10 +128,8 @@ export class QuestService {
             skillResult = await skillService.addSkillXP(quest.skillCategory, quest.xpReward);
         }
 
-        const populatedQuest = await quest.populate('templateId');
-
         return {
-            quest: populatedQuest,
+            quest: quest,
             skillResult // Contains: { skill, leveledUp, oldLevel, newLevel, newPerks }
         };
     }
