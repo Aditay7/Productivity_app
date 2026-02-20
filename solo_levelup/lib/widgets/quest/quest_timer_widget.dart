@@ -18,7 +18,19 @@ class QuestTimerWidget extends ConsumerWidget {
     final activeQuest = ref.watch(activeTimerQuestProvider);
 
     final isThisQuestActive = activeQuest?.id == quest.id;
-    final displaySeconds = isThisQuestActive ? elapsedSeconds : 0;
+
+    // Show live time if active, saved actual time if completed, else 0
+    final int displaySeconds;
+    if (isThisQuestActive) {
+      displaySeconds = elapsedSeconds;
+    } else if (quest.timerState == TimerState.completed) {
+      // Prefer precise seconds, fall back to minutes * 60
+      final actualSecs =
+          quest.timeActualSeconds ?? ((quest.timeActualMinutes ?? 0) * 60);
+      displaySeconds = actualSecs > 0 ? actualSecs : 0;
+    } else {
+      displaySeconds = 0;
+    }
 
     return GestureDetector(
       onTap: onTap,

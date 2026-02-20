@@ -143,10 +143,14 @@ export class QuestController {
      */
     async completeQuestWithTimer(req, res, next) {
         try {
-            const quest = await questService.completeQuestWithTimer(req.params.id, req.body.focusRating);
+            const result = await questService.completeQuestWithTimer(req.params.id, req.body.focusRating);
             res.json({
                 success: true,
-                data: quest,
+                data: result.quest,
+                skillResult: result.skillResult,
+                xpEarned: result.xpEarned,
+                xpModifier: result.xpModifier,
+                performanceMessage: result.performanceMessage,
                 message: 'Quest completed with timer data',
             });
         } catch (error) {

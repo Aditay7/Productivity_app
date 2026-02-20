@@ -132,7 +132,7 @@ export class QuestService {
             // 50-59: -10% XP penalty
             // 40-49: -20% XP penalty
             // < 40: -30% XP penalty
-            
+
             if (quest.productivityScore >= 90) {
                 xpModifier = 1.30;
                 performanceMessage = 'Excellent performance! +30% XP bonus';
@@ -155,7 +155,7 @@ export class QuestService {
                 xpModifier = 0.70;
                 performanceMessage = 'Needs improvement: -30% XP';
             }
-            
+
             finalXP = Math.round(quest.xpReward * xpModifier);
         }
 
@@ -208,6 +208,10 @@ export class QuestService {
 
         if (quest.timerState === 'running') {
             throw new AppError(400, 'Timer is already running');
+        }
+
+        if (quest.timerState === 'completed') {
+            throw new AppError(400, 'Timer has already been stopped for this quest');
         }
 
         quest.timerState = 'running';
@@ -282,6 +286,7 @@ export class QuestService {
         totalMs -= quest.pausedDuration;
 
         quest.timeActualMinutes = Math.round(totalMs / 60000); // Convert to minutes
+        quest.timeActualSeconds = Math.round(totalMs / 1000);  // Precise seconds
         quest.timerState = 'completed';
         quest.focusRating = focusRating;
 

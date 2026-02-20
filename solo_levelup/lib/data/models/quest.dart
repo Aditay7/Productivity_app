@@ -47,6 +47,8 @@ class Quest {
   // Time Tracking
   final int timeEstimatedMinutes; // Renamed from timeMinutes
   final int? timeActualMinutes;
+  final int?
+  timeActualSeconds; // precise seconds (avoids sub-minute rounding to 0)
   final DateTime? timeStarted;
   final DateTime? timePaused;
   final int? pausedDuration; // in milliseconds
@@ -78,6 +80,7 @@ class Quest {
     required this.difficulty,
     required this.timeEstimatedMinutes,
     this.timeActualMinutes,
+    this.timeActualSeconds,
     this.timeStarted,
     this.timePaused,
     this.pausedDuration,
@@ -123,8 +126,8 @@ class Quest {
     return Quest(
       id: questId,
       title: map['title'] as String,
-      description: map['description'] != null 
-          ? (map['description'] as String?) ?? '' 
+      description: map['description'] != null
+          ? (map['description'] as String?) ?? ''
           : '',
       statType: StatType.fromString(
         (map['statType'] ?? map['stat_type']) as String,
@@ -137,7 +140,15 @@ class Quest {
                   map['time_minutes'])
               as int,
       timeActualMinutes:
-          (map['timeActualMinutes'] ?? map['time_actual_minutes']) as int?,
+          (map['timeActualMinutes'] ?? map['time_actual_minutes']) != null
+          ? ((map['timeActualMinutes'] ?? map['time_actual_minutes']) as num)
+                .toInt()
+          : null,
+      timeActualSeconds:
+          (map['timeActualSeconds'] ?? map['time_actual_seconds']) != null
+          ? ((map['timeActualSeconds'] ?? map['time_actual_seconds']) as num)
+                .toInt()
+          : null,
       timeStarted: (map['timeStarted'] ?? map['time_started']) != null
           ? DateTime.parse(
               (map['timeStarted'] ?? map['time_started']) as String,
@@ -197,6 +208,7 @@ class Quest {
       'difficulty': difficulty.value, // Send numeric value for backend
       'timeEstimatedMinutes': timeEstimatedMinutes,
       if (timeActualMinutes != null) 'timeActualMinutes': timeActualMinutes,
+      if (timeActualSeconds != null) 'timeActualSeconds': timeActualSeconds,
       if (timeStarted != null) 'timeStarted': timeStarted!.toIso8601String(),
       if (timePaused != null) 'timePaused': timePaused!.toIso8601String(),
       'pausedDuration': pausedDuration,
@@ -232,6 +244,7 @@ class Quest {
     Difficulty? difficulty,
     int? timeEstimatedMinutes,
     int? timeActualMinutes,
+    int? timeActualSeconds,
     DateTime? timeStarted,
     DateTime? timePaused,
     int? pausedDuration,
@@ -258,6 +271,7 @@ class Quest {
       difficulty: difficulty ?? this.difficulty,
       timeEstimatedMinutes: timeEstimatedMinutes ?? this.timeEstimatedMinutes,
       timeActualMinutes: timeActualMinutes ?? this.timeActualMinutes,
+      timeActualSeconds: timeActualSeconds ?? this.timeActualSeconds,
       timeStarted: timeStarted ?? this.timeStarted,
       timePaused: timePaused ?? this.timePaused,
       pausedDuration: pausedDuration ?? this.pausedDuration,
