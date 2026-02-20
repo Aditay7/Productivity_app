@@ -28,6 +28,43 @@ class _QuestTimerScreenState extends ConsumerState<QuestTimerScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+
+    // Initialize timer state if quest timer is already running/paused
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final activeQuest = ref.read(activeTimerQuestProvider);
+      
+      // If this quest is not already set as active, initialize it
+      if (activeQuest?.id != widget.quest.id && 
+          widget.quest.timerState != TimerState.notStarted &&
+          widget.quest.timerState != TimerState.completed) {
+        
+        ref.read(activeTimerQuestProvider.notifier).state = widget.quest;
+        
+        if (widget.quest.timerState == TimerState.running) {
+          ref.read(isTimerRunningProvider.notifier).state = true;
+          // Start the periodic timer
+          ref.read(questTimerProvider.notifier).startElapsedTimeCounter(widget.quest);
+        } else if (widget.quest.timerState == TimerState.paused) {
+          ref.read(isTimerRunningProvider.notifier).state = false;
+          // Calculate and set elapsed time for paused state
+          if (widget.quest.timeStarted != null) {
+            final now = DateTime.now();
+            final elapsed = now.difference(widget.quest.timeStarted!);
+            final pausedSeconds = (widget.quest.pausedDuration ?? 0) ~/ 1000;
+            
+            int elapsedSeconds = elapsed.inSeconds - pausedSeconds;
+            
+            // If currently paused, also subtract current pause duration
+            if (widget.quest.timePaused != null) {
+              final currentPauseSeconds = now.difference(widget.quest.timePaused!).inSeconds;
+              elapsedSeconds -= currentPauseSeconds;
+            }
+            
+            ref.read(elapsedTimeProvider.notifier).state = elapsedSeconds.clamp(0, 999999);
+          }
+        }
+      }
+    });
   }
 
   @override
@@ -42,10 +79,15 @@ class _QuestTimerScreenState extends ConsumerState<QuestTimerScreen>
     final isRunning = ref.watch(isTimerRunningProvider);
     final activeQuest = ref.watch(activeTimerQuestProvider);
 
+    // Use active quest if this is the active quest, otherwise use widget quest
+    final currentQuest = (activeQuest?.id == widget.quest.id) 
+        ? activeQuest! 
+        : widget.quest;
+
     final isThisQuestActive = activeQuest?.id == widget.quest.id;
     final displaySeconds = isThisQuestActive ? elapsedSeconds : 0;
 
-    final estimatedSeconds = widget.quest.timeEstimatedMinutes * 60;
+    final estimatedSeconds = currentQuest.timeEstimatedMinutes * 60;
     final progress = estimatedSeconds > 0
         ? (displaySeconds / estimatedSeconds).clamp(0.0, 1.0)
         : 0.0;
@@ -100,7 +142,7 @@ class _QuestTimerScreenState extends ConsumerState<QuestTimerScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'of ${widget.quest.timeEstimatedMinutes}m',
+                        'of ${currentQuest.timeEstimatedMinutes}m',
                         style: TextStyle(fontSize: 18, color: Colors.white54),
                       ),
                       if (progress > 1.0) ...[
@@ -136,7 +178,7 @@ class _QuestTimerScreenState extends ConsumerState<QuestTimerScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (widget.quest.timerState == TimerState.notStarted)
+                  if (currentQuest.timerState == TimerState.notStarted)
                     _buildControlButton(
                       icon: Icons.play_arrow,
                       label: 'Start',
@@ -144,7 +186,7 @@ class _QuestTimerScreenState extends ConsumerState<QuestTimerScreen>
                       onPressed: () => _startTimer(),
                     ),
 
-                  if (widget.quest.timerState == TimerState.running) ...[
+                  if (currentQuest.timerState == TimerState.running) ...[
                     _buildControlButton(
                       icon: Icons.pause,
                       label: 'Pause',
@@ -160,7 +202,7 @@ class _QuestTimerScreenState extends ConsumerState<QuestTimerScreen>
                     ),
                   ],
 
-                  if (widget.quest.timerState == TimerState.paused) ...[
+                  if (currentQuest.timerState == TimerState.paused) ...[
                     _buildControlButton(
                       icon: Icons.play_arrow,
                       label: 'Resume',
@@ -181,7 +223,7 @@ class _QuestTimerScreenState extends ConsumerState<QuestTimerScreen>
               const SizedBox(height: 24),
 
               // Complete button
-              if (widget.quest.timerState != TimerState.notStarted)
+              if (currentQuest.timerState != TimerState.notStarted)
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(

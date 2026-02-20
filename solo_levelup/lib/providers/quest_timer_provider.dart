@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import '../data/models/quest.dart';
 import '../services/quest_timer_service.dart';
+import 'quest_provider.dart';
 
 /// Provider for quest timer service
 final questTimerServiceProvider = Provider((ref) => QuestTimerService());
@@ -34,7 +35,10 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
       ref.read(isTimerRunningProvider.notifier).state = true;
 
       // Start elapsed time counter
-      _startElapsedTimeCounter(updatedQuest);
+      startElapsedTimeCounter(updatedQuest);
+      
+      // Refresh quest list
+      ref.invalidate(questProvider);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -50,6 +54,9 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
 
       // Stop elapsed time counter
       _stopElapsedTimeCounter();
+      
+      // Refresh quest list
+      ref.invalidate(questProvider);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -64,7 +71,10 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
       ref.read(isTimerRunningProvider.notifier).state = true;
 
       // Restart elapsed time counter
-      _startElapsedTimeCounter(updatedQuest);
+      startElapsedTimeCounter(updatedQuest);
+      
+      // Refresh quest list
+      ref.invalidate(questProvider);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -84,6 +94,9 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
 
       // Stop elapsed time counter
       _stopElapsedTimeCounter();
+      
+      // Refresh quest list
+      ref.invalidate(questProvider);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
@@ -106,6 +119,9 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
 
       // Stop elapsed time counter
       _stopElapsedTimeCounter();
+      
+      // Refresh quest list
+      ref.invalidate(questProvider);
 
       return result;
     } catch (e, stack) {
@@ -115,7 +131,7 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
   }
 
   /// Start elapsed time counter
-  void _startElapsedTimeCounter(Quest quest) {
+  void startElapsedTimeCounter(Quest quest) {
     _stopElapsedTimeCounter();
 
     if (quest.timeStarted != null) {

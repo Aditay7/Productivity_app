@@ -127,6 +127,9 @@ export class QuestController {
             res.json({
                 success: true,
                 data: result.quest,
+                xpEarned: result.xpEarned,
+                xpModifier: result.xpModifier,
+                performanceMessage: result.performanceMessage,
                 skillResult: result.skillResult,
                 message: 'Quest completed successfully',
             });

@@ -118,19 +118,63 @@ export class QuestService {
         quest.streakAtCompletion = player.currentStreak;
         await quest.save();
 
-        // Add XP to player (legacy)
-        await playerService.addXP(quest.xpReward, quest.statType);
+        // Calculate XP with productivity bonus/penalty
+        let finalXP = quest.xpReward;
+        let xpModifier = 1.0; // Default: no change
+        let performanceMessage = null;
+
+        if (quest.productivityScore !== null && quest.productivityScore !== undefined) {
+            // Productivity-based XP multiplier:
+            // 90-100: +30% XP bonus
+            // 80-89: +20% XP bonus
+            // 70-79: +10% XP bonus
+            // 60-69: Normal XP (no change)
+            // 50-59: -10% XP penalty
+            // 40-49: -20% XP penalty
+            // < 40: -30% XP penalty
+            
+            if (quest.productivityScore >= 90) {
+                xpModifier = 1.30;
+                performanceMessage = 'Excellent performance! +30% XP bonus';
+            } else if (quest.productivityScore >= 80) {
+                xpModifier = 1.20;
+                performanceMessage = 'Great performance! +20% XP bonus';
+            } else if (quest.productivityScore >= 70) {
+                xpModifier = 1.10;
+                performanceMessage = 'Good performance! +10% XP bonus';
+            } else if (quest.productivityScore >= 60) {
+                xpModifier = 1.0;
+                performanceMessage = 'Decent performance';
+            } else if (quest.productivityScore >= 50) {
+                xpModifier = 0.90;
+                performanceMessage = 'Below target: -10% XP';
+            } else if (quest.productivityScore >= 40) {
+                xpModifier = 0.80;
+                performanceMessage = 'Poor focus: -20% XP';
+            } else {
+                xpModifier = 0.70;
+                performanceMessage = 'Needs improvement: -30% XP';
+            }
+            
+            finalXP = Math.round(quest.xpReward * xpModifier);
+        }
+
+        // Add XP to player
+        await playerService.addXP(finalXP, quest.statType);
 
         // Add XP to skill category if specified
         let skillResult = null;
         if (quest.skillCategory) {
             const skillService = (await import('./skill.service.js')).default;
-            skillResult = await skillService.addSkillXP(quest.skillCategory, quest.xpReward);
+            skillResult = await skillService.addSkillXP(quest.skillCategory, finalXP);
         }
 
         return {
             quest: quest,
-            skillResult // Contains: { skill, leveledUp, oldLevel, newLevel, newPerks }
+            skillResult, // Contains: { skill, leveledUp, oldLevel, newLevel, newPerks }
+            xpEarned: finalXP,
+            xpModifier: xpModifier,
+            performanceMessage: performanceMessage
         };
     }
 
@@ -169,6 +213,8 @@ export class QuestService {
         quest.timerState = 'running';
         quest.timeStarted = new Date();
         quest.timePaused = null;
+        quest.pausedDuration = 0;
+        quest.distractionCount = 0;
 
         await quest.save();
         return quest;

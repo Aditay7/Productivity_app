@@ -5,7 +5,9 @@ import '../../providers/quest_provider.dart';
 import '../../providers/player_provider.dart';
 import '../../data/repositories/quest_repository.dart';
 import '../../core/constants/difficulty.dart';
+import '../../widgets/quest/quest_timer_widget.dart';
 import 'add_quest_screen.dart';
+import 'quest_timer_screen.dart';
 
 class QuestsScreen extends ConsumerStatefulWidget {
   const QuestsScreen({super.key});
@@ -291,6 +293,92 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                   }),
                 ],
               ),
+              // Timer widget for active quests
+              if (isActive) ...[
+                const SizedBox(height: 12),
+                QuestTimerWidget(
+                  quest: quest,
+                  onTap: () => _openTimerScreen(quest),
+                ),
+              ],
+              // Show productivity metrics for completed quests
+              if (!isActive && quest.productivityScore != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _getProductivityColor(quest.productivityScore!)
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _getProductivityColor(quest.productivityScore!),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _getProductivityIcon(quest.productivityScore!),
+                            size: 16,
+                            color: _getProductivityColor(quest.productivityScore!),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Performance: ${quest.productivityScore!.round()}%',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: _getProductivityColor(quest.productivityScore!),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (quest.accuracyScore != null) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(Icons.timer, size: 14, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Time Accuracy: ${quest.accuracyScore!.round()}%',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                            if (quest.timeActualMinutes != null) ...[
+                              Text(
+                                ' (${quest.timeActualMinutes} min)',
+                                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                      if (quest.focusRating != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.center_focus_strong, size: 14, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Focus: ',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                            ...List.generate(5, (index) {
+                              return Icon(
+                                index < quest.focusRating! ? Icons.star : Icons.star_border,
+                                size: 12,
+                                color: index < quest.focusRating! ? Colors.orange : Colors.grey,
+                              );
+                            }),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
               if (!isActive && quest.completedAt != null) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -334,6 +422,20 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
+  Color _getProductivityColor(double score) {
+    if (score >= 80) return Colors.green;
+    if (score >= 60) return Colors.blue;
+    if (score >= 40) return Colors.orange;
+    return Colors.red;
+  }
+
+  IconData _getProductivityIcon(double score) {
+    if (score >= 80) return Icons.emoji_events;
+    if (score >= 60) return Icons.thumb_up;
+    if (score >= 40) return Icons.trending_down;
+    return Icons.warning;
+  }
+
   void _showQuestDetails(quest) {
     showDialog(
       context: context,
@@ -375,6 +477,15 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
     );
   }
 
+  void _openTimerScreen(quest) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuestTimerScreen(quest: quest),
+      ),
+    );
+  }
+
   Future<void> _completeQuest(quest) async {
     final questId = quest.id.toString();
 
@@ -388,18 +499,43 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
     try {
       final questRepo = QuestRepository();
 
-      await questRepo.completeQuest(questId);
+      final result = await questRepo.completeQuest(questId);
 
       // Update player stats and quests - this will trigger UI refresh
       ref.invalidate(playerProvider);
       ref.invalidate(questProvider);
 
       if (mounted) {
+        // Build completion message with performance feedback
+        final xpEarned = result['xpEarned'] as int? ?? quest.xpReward;
+        final performanceMsg = result['performanceMessage'] as String?;
+        final xpModifier = result['xpModifier'] as double?;
+        
+        String message = 'Quest completed! +$xpEarned XP';
+        Color backgroundColor = Colors.green;
+        
+        if (performanceMsg != null) {
+          message = performanceMsg;
+          // Color based on performance
+          if (xpModifier != null) {
+            if (xpModifier >= 1.2) {
+              backgroundColor = Colors.green;
+            } else if (xpModifier >= 1.0) {
+              backgroundColor = Colors.blue;
+            } else if (xpModifier >= 0.8) {
+              backgroundColor = Colors.orange;
+            } else {
+              backgroundColor = Colors.red;
+            }
+          }
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Quest completed! +${quest.xpReward} XP'),
-            backgroundColor: Colors.green,
+            content: Text(message),
+            backgroundColor: backgroundColor,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
