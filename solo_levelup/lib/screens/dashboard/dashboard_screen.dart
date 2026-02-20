@@ -11,6 +11,10 @@ import '../templates/manage_templates_screen.dart';
 import '../quests/add_quest_screen.dart';
 import '../quests/quest_timer_screen.dart';
 
+// Solid card color used consistently across the dashboard
+const _kCard = Color(0xFF1A1630);
+const _kSurface = Color(0xFF120F25);
+
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -20,9 +24,9 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen>
     with TickerProviderStateMixin {
-  late AnimationController _heroController;
-  late AnimationController _pulseController;
-  late AnimationController _statsController;
+  late AnimationController _heroCtrl;
+  late AnimationController _pulseCtrl;
+  late AnimationController _statsCtrl;
   late Animation<double> _heroFade;
   late Animation<Offset> _heroSlide;
   late Animation<double> _statsBounce;
@@ -30,40 +34,40 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   void initState() {
     super.initState();
-    _heroController = AnimationController(
+    _heroCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 700),
     );
-    _pulseController = AnimationController(
+    _pulseCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
-    _statsController = AnimationController(
+    _statsCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 900),
     );
 
-    _heroFade = CurvedAnimation(parent: _heroController, curve: Curves.easeOut);
-    _heroSlide = Tween<Offset>(begin: const Offset(0, -0.2), end: Offset.zero)
-        .animate(
-          CurvedAnimation(parent: _heroController, curve: Curves.easeOutCubic),
-        );
+    _heroFade = CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOut);
+    _heroSlide = Tween<Offset>(
+      begin: const Offset(0, -0.15),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOutCubic));
     _statsBounce = CurvedAnimation(
-      parent: _statsController,
+      parent: _statsCtrl,
       curve: Curves.elasticOut,
     );
 
-    _heroController.forward();
-    Future.delayed(const Duration(milliseconds: 350), () {
-      if (mounted) _statsController.forward();
+    _heroCtrl.forward();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _statsCtrl.forward();
     });
   }
 
   @override
   void dispose() {
-    _heroController.dispose();
-    _pulseController.dispose();
-    _statsController.dispose();
+    _heroCtrl.dispose();
+    _pulseCtrl.dispose();
+    _statsCtrl.dispose();
     super.dispose();
   }
 
@@ -82,68 +86,63 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ref.invalidate(goalProvider);
         },
         color: AppTheme.gold,
-        backgroundColor: AppTheme.cardBackground,
+        backgroundColor: _kCard,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // ── Compact Hero Header ───────────────────────────────────
+            // ── Hero Header ────────────────────────────────────────────
             SliverToBoxAdapter(
               child: playerAsync.when(
-                data: (player) => _HeroHeader(
-                  player: player,
+                data: (p) => _HeroHeader(
+                  player: p,
                   heroFade: _heroFade,
                   heroSlide: _heroSlide,
-                  pulseController: _pulseController,
+                  pulseCtrl: _pulseCtrl,
                 ),
-                loading: () => Container(
-                  height: 130,
-                  color: AppTheme.darkPurple.withOpacity(0.3),
-                ),
+                loading: () => const _LoadingBlock(height: 120),
                 error: (_, __) => const SizedBox(height: 80),
               ),
             ),
 
-            // ── XP Progress Bar ───────────────────────────────────────
+            // ── XP Bar ────────────────────────────────────────────────
             SliverToBoxAdapter(
               child: playerAsync.when(
-                data: (player) => _XpProgressSection(player: player),
-                loading: () => const SizedBox(height: 80),
+                data: (p) => _XpBar(player: p),
+                loading: () => const _LoadingBlock(height: 76),
                 error: (_, __) => const SizedBox(),
               ),
             ),
 
-            // ── Quick Stats Row ───────────────────────────────────────
+            // ── Quick Stats ───────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                 child: playerAsync.when(
-                  data: (player) => questsAsync.when(
-                    data: (quests) => goalsAsync.when(
-                      data: (goals) => _QuickStatsRow(
-                        player: player,
-                        activeQuests: quests
-                            .where((q) => !q.isCompleted)
-                            .length,
-                        activeGoals: goals.where((g) => g.isActive).length,
-                        statsBounce: _statsBounce,
+                  data: (p) => questsAsync.when(
+                    data: (q) => goalsAsync.when(
+                      data: (g) => _QuickStats(
+                        player: p,
+                        activeQuests: q.where((x) => !x.isCompleted).length,
+                        activeGoals: g.where((x) => x.isActive).length,
+                        bounce: _statsBounce,
                       ),
-                      loading: () => const SizedBox(height: 90),
+                      loading: () => const _LoadingBlock(height: 90),
                       error: (_, __) => const SizedBox(),
                     ),
-                    loading: () => const SizedBox(height: 90),
+                    loading: () => const _LoadingBlock(height: 90),
                     error: (_, __) => const SizedBox(),
                   ),
-                  loading: () => const SizedBox(height: 90),
+                  loading: () => const _LoadingBlock(height: 90),
                   error: (_, __) => const SizedBox(),
                 ),
               ),
             ),
 
-            // ── Attributes Section ───────────────────────────────────
+            // ── Attributes ────────────────────────────────────────────
             SliverToBoxAdapter(
               child: playerAsync.when(
-                data: (player) => _AttributesSection(player: player),
-                loading: () => const SizedBox(height: 180),
+                data: (p) => _AttributesSection(player: p),
+                loading: () => const _LoadingBlock(height: 200),
                 error: (_, __) => const SizedBox(),
               ),
             ),
@@ -151,13 +150,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             // ── Today's Quests ────────────────────────────────────────
             SliverToBoxAdapter(
               child: questsAsync.when(
-                data: (quests) {
-                  final active = quests
-                      .where((q) => !q.isCompleted)
-                      .take(5)
-                      .toList();
-                  return _TodayQuestsSection(quests: active);
-                },
+                data: (q) => _TodayQuestsSection(
+                  quests: q.where((x) => !x.isCompleted).take(5).toList(),
+                ),
                 loading: () => const _SectionShimmer(label: "Today's Quests"),
                 error: (_, __) => const SizedBox(),
               ),
@@ -166,22 +161,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             // ── Active Goals ──────────────────────────────────────────
             SliverToBoxAdapter(
               child: goalsAsync.when(
-                data: (goals) {
-                  final active = goals
-                      .where((g) => g.isActive)
-                      .take(3)
-                      .toList();
-                  return _ActiveGoalsSection(goals: active);
-                },
+                data: (g) => _ActiveGoalsSection(
+                  goals: g.where((x) => x.isActive).take(3).toList(),
+                ),
                 loading: () => const _SectionShimmer(label: 'Active Goals'),
                 error: (_, __) => const SizedBox(),
               ),
             ),
 
             // ── Quick Actions ─────────────────────────────────────────
-            SliverToBoxAdapter(child: _QuickActionsSection()),
+            const SliverToBoxAdapter(child: _QuickActionsSection()),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 110)),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
         ),
       ),
@@ -190,19 +181,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPACT HERO HEADER (~130px tall)
+// HERO HEADER  — solid dark surface, no gradient
 // ─────────────────────────────────────────────────────────────────────────────
 class _HeroHeader extends StatelessWidget {
   final Player player;
   final Animation<double> heroFade;
   final Animation<Offset> heroSlide;
-  final AnimationController pulseController;
+  final AnimationController pulseCtrl;
 
   const _HeroHeader({
     required this.player,
     required this.heroFade,
     required this.heroSlide,
-    required this.pulseController,
+    required this.pulseCtrl,
   });
 
   @override
@@ -219,72 +210,51 @@ class _HeroHeader extends StatelessWidget {
       child: SlideTransition(
         position: heroSlide,
         child: Container(
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF1A0533), Color(0xFF110628), Color(0xFF0A0E27)],
-            ),
-          ),
+          color: _kSurface,
           child: Stack(
             children: [
-              // Subtle star particles
-              ..._particles(),
-              // Glow orb top-right
+              // Subtle star dots
+              ..._dots(),
+              // Pulse glow behind level badge
               Positioned(
-                right: -15,
-                top: -15,
+                right: 12,
+                top: 12,
                 child: AnimatedBuilder(
-                  animation: pulseController,
+                  animation: pulseCtrl,
                   builder: (_, __) => Container(
-                    width: 100,
-                    height: 100,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          AppTheme.primaryPurple.withOpacity(
-                            0.22 * pulseController.value,
-                          ),
-                          Colors.transparent,
-                        ],
-                      ),
+                      color: AppTheme.gold.withOpacity(0.06 * pulseCtrl.value),
                     ),
                   ),
                 ),
               ),
-              // Main content row
               SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  padding: const EdgeInsets.fromLTRB(20, 12, 16, 16),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Avatar
+                      // Avatar circle
                       Container(
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
+                          color: AppTheme.primaryPurple.withOpacity(0.25),
                           shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [AppTheme.gold, AppTheme.primaryPurple],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                          border: Border.all(
+                            color: AppTheme.gold.withOpacity(0.5),
+                            width: 2,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.gold.withOpacity(0.45),
-                              blurRadius: 12,
-                            ),
-                          ],
                         ),
                         child: Center(
                           child: Text(
                             player.name[0].toUpperCase(),
                             style: const TextStyle(
-                              color: Colors.black,
+                              color: AppTheme.gold,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
@@ -307,28 +277,27 @@ class _HeroHeader extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 2),
                             Text(
                               player.name,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 0.2,
                               ),
                             ),
-                            const SizedBox(height: 7),
+                            const SizedBox(height: 8),
                             Wrap(
-                              spacing: 7,
-                              runSpacing: 5,
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
                                 _chip(
                                   Icons.local_fire_department,
-                                  '${player.currentStreak}d streak',
+                                  '${player.currentStreak}d',
                                   Colors.orange,
                                 ),
                                 _chip(
-                                  Icons.diamond_outlined,
+                                  Icons.diamond,
                                   '${player.totalXP} XP',
                                   AppTheme.gold,
                                 ),
@@ -343,25 +312,16 @@ class _HeroHeader extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Level badge
+                      // Level badge — solid, no gradient
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 11,
+                          horizontal: 12,
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppTheme.gold, Color(0xFFE67E22)],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
+                          color: AppTheme.gold.withOpacity(0.9),
                           borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.gold.withOpacity(0.5),
-                              blurRadius: 12,
-                            ),
-                          ],
+                          border: Border.all(color: AppTheme.gold, width: 1.5),
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -371,7 +331,7 @@ class _HeroHeader extends StatelessWidget {
                               size: 16,
                               color: Colors.black87,
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 2),
                             const Text(
                               'LVL',
                               style: TextStyle(
@@ -404,20 +364,20 @@ class _HeroHeader extends StatelessWidget {
     );
   }
 
-  List<Widget> _particles() {
-    final rand = math.Random(42);
-    return List.generate(10, (i) {
-      final size = rand.nextDouble() * 2.5 + 1;
+  List<Widget> _dots() {
+    final r = math.Random(99);
+    return List.generate(8, (i) {
+      final sz = r.nextDouble() * 2 + 1;
       return Positioned(
-        left: rand.nextDouble() * 420,
-        top: rand.nextDouble() * 130,
+        left: r.nextDouble() * 400,
+        top: r.nextDouble() * 110,
         child: Container(
-          width: size,
-          height: size,
+          width: sz,
+          height: sz,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: (i % 3 == 0 ? AppTheme.gold : AppTheme.primaryPurple)
-                .withOpacity(rand.nextDouble() * 0.5 + 0.15),
+            color: (i % 2 == 0 ? AppTheme.gold : AppTheme.primaryPurple)
+                .withOpacity(r.nextDouble() * 0.35 + 0.1),
           ),
         ),
       );
@@ -428,9 +388,9 @@ class _HeroHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.13),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -452,17 +412,16 @@ class _HeroHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// XP PROGRESS SECTION
+// XP BAR
 // ─────────────────────────────────────────────────────────────────────────────
-class _XpProgressSection extends StatefulWidget {
+class _XpBar extends StatefulWidget {
   final Player player;
-  const _XpProgressSection({required this.player});
+  const _XpBar({required this.player});
   @override
-  State<_XpProgressSection> createState() => _XpProgressSectionState();
+  State<_XpBar> createState() => _XpBarState();
 }
 
-class _XpProgressSectionState extends State<_XpProgressSection>
-    with SingleTickerProviderStateMixin {
+class _XpBarState extends State<_XpBar> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
 
@@ -471,7 +430,7 @@ class _XpProgressSectionState extends State<_XpProgressSection>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1300),
+      duration: const Duration(milliseconds: 1200),
     );
     final progress = widget.player.xpToNextLevel > 0
         ? (widget.player.xp / widget.player.xpToNextLevel).clamp(0.0, 1.0)
@@ -491,25 +450,18 @@ class _XpProgressSectionState extends State<_XpProgressSection>
 
   @override
   Widget build(BuildContext context) {
-    final player = widget.player;
-    final pct = player.xpToNextLevel > 0
-        ? (player.xp / player.xpToNextLevel * 100).toStringAsFixed(1)
+    final p = widget.player;
+    final pct = p.xpToNextLevel > 0
+        ? (p.xp / p.xpToNextLevel * 100).toStringAsFixed(1)
         : '100.0';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.primaryPurple.withOpacity(0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryPurple.withOpacity(0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        color: _kCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primaryPurple.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,23 +474,23 @@ class _XpProgressSectionState extends State<_XpProgressSection>
                   Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
-                      color: AppTheme.gold.withOpacity(0.18),
+                      color: AppTheme.gold.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: const Icon(
                       Icons.bolt,
                       color: AppTheme.gold,
-                      size: 16,
+                      size: 15,
                     ),
                   ),
-                  const SizedBox(width: 9),
+                  const SizedBox(width: 8),
                   const Text(
                     'EXPERIENCE',
                     style: TextStyle(
-                      color: Colors.white60,
+                      color: Colors.white54,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 1.4,
+                      letterSpacing: 1.3,
                     ),
                   ),
                 ],
@@ -550,62 +502,54 @@ class _XpProgressSectionState extends State<_XpProgressSection>
                       text: pct,
                       style: const TextStyle(
                         color: AppTheme.gold,
-                        fontSize: 17,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const TextSpan(
                       text: '%',
-                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                      style: TextStyle(color: Colors.white30, fontSize: 11),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 11),
           AnimatedBuilder(
             animation: _anim,
             builder: (_, __) => Stack(
               children: [
                 Container(
-                  height: 12,
+                  height: 10,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(5),
                   ),
                 ),
                 FractionallySizedBox(
                   widthFactor: _anim.value,
                   child: Container(
-                    height: 12,
+                    height: 10,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      gradient: const LinearGradient(
-                        colors: [AppTheme.primaryPurple, AppTheme.gold],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.gold.withOpacity(0.45),
-                          blurRadius: 7,
-                        ),
-                      ],
+                      color: AppTheme.primaryPurple,
+                      borderRadius: BorderRadius.circular(5),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 7),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${player.xp} XP',
+                '${p.xp} XP',
                 style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
               Text(
-                'Lvl ${player.level + 1}: ${player.xpToNextLevel} XP',
+                'Next level: ${p.xpToNextLevel} XP',
                 style: const TextStyle(
                   color: AppTheme.gold,
                   fontSize: 11,
@@ -623,114 +567,84 @@ class _XpProgressSectionState extends State<_XpProgressSection>
 // ─────────────────────────────────────────────────────────────────────────────
 // QUICK STATS ROW
 // ─────────────────────────────────────────────────────────────────────────────
-class _QuickStatsRow extends StatelessWidget {
+class _QuickStats extends StatelessWidget {
   final Player player;
-  final int activeQuests;
-  final int activeGoals;
-  final Animation<double> statsBounce;
+  final int activeQuests, activeGoals;
+  final Animation<double> bounce;
 
-  const _QuickStatsRow({
+  const _QuickStats({
     required this.player,
     required this.activeQuests,
     required this.activeGoals,
-    required this.statsBounce,
+    required this.bounce,
   });
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      _SI(
+      (
         Icons.local_fire_department,
         '${player.currentStreak}',
         'Streak',
         Colors.orange,
       ),
-      _SI(Icons.task_alt, '$activeQuests', 'Quests', Colors.blue),
-      _SI(Icons.flag, '$activeGoals', 'Goals', Colors.green),
-      _SI(
-        Icons.workspace_premium,
-        '${player.totalStats}',
-        'Power',
-        AppTheme.primaryPurple,
-      ),
+      (Icons.task_alt, '$activeQuests', 'Quests', AppTheme.primaryPurple),
+      (Icons.flag_rounded, '$activeGoals', 'Goals', Colors.green),
+      (Icons.workspace_premium, '${player.totalStats}', 'Power', Colors.blue),
     ];
 
     return AnimatedBuilder(
-      animation: statsBounce,
+      animation: bounce,
       builder: (_, __) {
-        final v = statsBounce.value.clamp(0.0, 1.0);
+        final v = bounce.value.clamp(0.0, 1.0);
         return Transform.scale(
-          scale: 0.7 + 0.3 * v,
+          scale: 0.75 + 0.25 * v,
           child: Opacity(
             opacity: v,
             child: SizedBox(
-              height: 90,
+              height: 88,
               child: Row(
-                children: items
-                    .asMap()
-                    .entries
-                    .map(
-                      (e) => Expanded(
-                        child: Container(
-                          margin: EdgeInsets.only(
-                            left: e.key == 0 ? 0 : 6,
-                            right: e.key == 3 ? 0 : 6,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppTheme.cardBackground,
-                                e.value.color.withOpacity(0.08),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(15),
-                            border: Border.all(
-                              color: e.value.color.withOpacity(0.28),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: e.value.color.withOpacity(0.1),
-                                blurRadius: 7,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                e.value.icon,
-                                color: e.value.color,
-                                size: 20,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                e.value.value,
-                                style: TextStyle(
-                                  color: e.value.color,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 17,
-                                ),
-                              ),
-                              Text(
-                                e.value.label,
-                                style: const TextStyle(
-                                  color: Colors.white38,
-                                  fontSize: 9,
-                                  letterSpacing: 0.3,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
+                children: items.asMap().entries.map((e) {
+                  final idx = e.key;
+                  final (icon, value, label, color) = e.value;
+                  return Expanded(
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        left: idx == 0 ? 0 : 5,
+                        right: idx == 3 ? 0 : 5,
                       ),
-                    )
-                    .toList(),
+                      decoration: BoxDecoration(
+                        color: _kCard,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: color.withOpacity(0.25)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(icon, color: color, size: 20),
+                          const SizedBox(height: 4),
+                          Text(
+                            value,
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            label,
+                            style: const TextStyle(
+                              color: Colors.white38,
+                              fontSize: 9,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ),
@@ -738,13 +652,6 @@ class _QuickStatsRow extends StatelessWidget {
       },
     );
   }
-}
-
-class _SI {
-  final IconData icon;
-  final String value, label;
-  final Color color;
-  _SI(this.icon, this.value, this.label, this.color);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -756,51 +663,43 @@ class _AttributesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stats = StatType.values
-        .map((t) => _Attr(t, player.getStatValue(t)))
+    final attrs = StatType.values
+        .map((t) => (t, player.getStatValue(t)))
         .toList();
-    final maxVal = stats.map((s) => s.value).reduce(math.max).toDouble();
+    final maxVal = attrs.map((a) => a.$2).reduce(math.max).toDouble();
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(
+          _SectionLabel(
             icon: Icons.auto_graph,
             title: 'ATTRIBUTES',
             color: AppTheme.primaryPurple,
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: AppTheme.cardGradient,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppTheme.primaryPurple.withOpacity(0.28),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryPurple.withOpacity(0.1),
-                  blurRadius: 18,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              children: stats
-                  .map(
-                    (a) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _AnimatedStatBar(
-                        attr: a,
-                        ratio: maxVal > 0 ? a.value / maxVal : 0.0,
-                      ),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final w = (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: attrs.map((a) {
+                  final ratio = maxVal > 0 ? a.$2 / maxVal : 0.0;
+                  final isLastSingle = attrs.length % 2 != 0 && a == attrs.last;
+                  return SizedBox(
+                    width: isLastSingle ? constraints.maxWidth : w,
+                    child: _StatGridCard(
+                      type: a.$1,
+                      value: a.$2,
+                      ratio: ratio,
+                      isFullWidth: isLastSingle,
                     ),
-                  )
-                  .toList(),
-            ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
@@ -808,21 +707,22 @@ class _AttributesSection extends StatelessWidget {
   }
 }
 
-class _Attr {
+class _StatGridCard extends StatefulWidget {
   final StatType type;
   final int value;
-  _Attr(this.type, this.value);
-}
-
-class _AnimatedStatBar extends StatefulWidget {
-  final _Attr attr;
   final double ratio;
-  const _AnimatedStatBar({required this.attr, required this.ratio});
+  final bool isFullWidth;
+  const _StatGridCard({
+    required this.type,
+    required this.value,
+    required this.ratio,
+    required this.isFullWidth,
+  });
   @override
-  State<_AnimatedStatBar> createState() => _AnimatedStatBarState();
+  State<_StatGridCard> createState() => _StatGridCardState();
 }
 
-class _AnimatedStatBarState extends State<_AnimatedStatBar>
+class _StatGridCardState extends State<_StatGridCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
@@ -832,13 +732,13 @@ class _AnimatedStatBarState extends State<_AnimatedStatBar>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1000),
     );
     _anim = Tween(
       begin: 0.0,
       end: widget.ratio,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    Future.delayed(const Duration(milliseconds: 450), () {
+    Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _ctrl.forward();
     });
   }
@@ -851,80 +751,96 @@ class _AnimatedStatBarState extends State<_AnimatedStatBar>
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.attr.type.color;
-    return Row(
-      children: [
-        SizedBox(
-          width: 26,
-          child: Text(
-            widget.attr.type.emoji,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18),
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 78,
-          child: Text(
-            widget.attr.type.displayName,
-            style: const TextStyle(
-              color: Colors.white60,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Stack(
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _kCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: widget.type.color.withOpacity(0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Container(
-                height: 7,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              AnimatedBuilder(
-                animation: _anim,
-                builder: (_, __) => FractionallySizedBox(
-                  widthFactor: _anim.value,
-                  child: Container(
-                    height: 7,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      gradient: LinearGradient(
-                        colors: [color.withOpacity(0.7), color],
-                      ),
-                      boxShadow: [
-                        BoxShadow(color: color.withOpacity(0.5), blurRadius: 5),
-                      ],
-                    ),
+              Text(widget.type.emoji, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  widget.type.displayName,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 28,
-          child: Text(
-            '${widget.attr.value}',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-            textAlign: TextAlign.right,
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${widget.value}',
+                style: TextStyle(
+                  color: widget.type.color,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'PTS',
+                style: TextStyle(
+                  color: Colors.white24,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 14),
+          // Animated mini bar
+          AnimatedBuilder(
+            animation: _anim,
+            builder: (_, __) => Stack(
+              children: [
+                Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: _anim.value,
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: widget.type.color,
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.type.color.withOpacity(0.5),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TODAY'S QUESTS SECTION
+// TODAY'S QUESTS
 // ─────────────────────────────────────────────────────────────────────────────
 class _TodayQuestsSection extends ConsumerWidget {
   final List quests;
@@ -933,17 +849,17 @@ class _TodayQuestsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SectionHeader(
+              _SectionLabel(
                 icon: Icons.today,
                 title: "TODAY'S QUESTS",
-                color: Colors.blue,
+                color: AppTheme.primaryPurple,
               ),
               Text(
                 '${quests.length} active',
@@ -951,25 +867,24 @@ class _TodayQuestsSection extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           if (quests.isEmpty)
-            _EmptyState(
-              icon: Icons.task_outlined,
+            _Empty(
+              icon: '⚔️',
               message: 'No active quests',
-              sub: 'Tap + below to create a quest',
-              color: Colors.blue,
+              sub: 'Tap + below to create one',
             )
           else
-            ...quests.map((q) => _QuestCard(quest: q)),
+            ...quests.map((q) => _DashQuestTile(quest: q)),
         ],
       ),
     );
   }
 }
 
-class _QuestCard extends ConsumerWidget {
+class _DashQuestTile extends ConsumerWidget {
   final dynamic quest;
-  const _QuestCard({required this.quest});
+  const _DashQuestTile({required this.quest});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -980,30 +895,26 @@ class _QuestCard extends ConsumerWidget {
         MaterialPageRoute(builder: (_) => QuestTimerScreen(quest: quest)),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 9),
+        padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.cardBackground, color.withOpacity(0.07)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color.withOpacity(0.28)),
+          color: _kCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.25)),
         ),
         child: Row(
           children: [
             Container(
-              width: 42,
-              height: 42,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(11),
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Text(
                   quest.statType.emoji,
-                  style: const TextStyle(fontSize: 21),
+                  style: const TextStyle(fontSize: 20),
                 ),
               ),
             ),
@@ -1017,7 +928,7 @@ class _QuestCard extends ConsumerWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: 13,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1030,12 +941,12 @@ class _QuestCard extends ConsumerWidget {
                         size: 12,
                         color: Colors.white38,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Text(
                         '${quest.timeEstimatedMinutes}m',
                         style: const TextStyle(
                           color: Colors.white38,
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -1045,7 +956,7 @@ class _QuestCard extends ConsumerWidget {
                         '+${quest.xpReward} XP',
                         style: const TextStyle(
                           color: AppTheme.gold,
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1063,7 +974,7 @@ class _QuestCard extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ACTIVE GOALS SECTION
+// ACTIVE GOALS
 // ─────────────────────────────────────────────────────────────────────────────
 class _ActiveGoalsSection extends StatelessWidget {
   final List goals;
@@ -1072,39 +983,38 @@ class _ActiveGoalsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(
+          _SectionLabel(
             icon: Icons.flag_rounded,
             title: 'ACTIVE GOALS',
             color: Colors.green,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           if (goals.isEmpty)
-            _EmptyState(
-              icon: Icons.flag_outlined,
+            _Empty(
+              icon: '🎯',
               message: 'No active goals',
               sub: 'Set goals in the Goals tab',
-              color: Colors.green,
             )
           else
-            ...goals.map((g) => _GoalCard(goal: g)),
+            ...goals.map((g) => _DashGoalTile(goal: g)),
         ],
       ),
     );
   }
 }
 
-class _GoalCard extends StatefulWidget {
+class _DashGoalTile extends StatefulWidget {
   final dynamic goal;
-  const _GoalCard({required this.goal});
+  const _DashGoalTile({required this.goal});
   @override
-  State<_GoalCard> createState() => _GoalCardState();
+  State<_DashGoalTile> createState() => _DashGoalTileState();
 }
 
-class _GoalCardState extends State<_GoalCard>
+class _DashGoalTileState extends State<_DashGoalTile>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
@@ -1115,7 +1025,7 @@ class _GoalCardState extends State<_GoalCard>
     final double pct = (widget.goal.progressPercentage / 100.0).clamp(0.0, 1.0);
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 800),
     );
     _anim = Tween<double>(
       begin: 0.0,
@@ -1136,12 +1046,12 @@ class _GoalCardState extends State<_GoalCard>
   Widget build(BuildContext context) {
     final goal = widget.goal;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.green.withOpacity(0.28)),
+        color: _kCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.green.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1167,12 +1077,12 @@ class _GoalCardState extends State<_GoalCard>
                 style: const TextStyle(
                   color: Colors.green,
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontSize: 14,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: 8),
           Stack(
             children: [
               Container(
@@ -1189,23 +1099,15 @@ class _GoalCardState extends State<_GoalCard>
                   child: Container(
                     height: 5,
                     decoration: BoxDecoration(
+                      color: Colors.green,
                       borderRadius: BorderRadius.circular(3),
-                      gradient: const LinearGradient(
-                        colors: [Colors.green, Color(0xFF00E676)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.5),
-                          blurRadius: 5,
-                        ),
-                      ],
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             '${goal.currentValue} / ${goal.targetValue} ${goal.unit.displayName}',
             style: const TextStyle(color: Colors.white38, fontSize: 11),
@@ -1220,19 +1122,21 @@ class _GoalCardState extends State<_GoalCard>
 // QUICK ACTIONS
 // ─────────────────────────────────────────────────────────────────────────────
 class _QuickActionsSection extends ConsumerWidget {
+  const _QuickActionsSection();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(
+          _SectionLabel(
             icon: Icons.flash_on,
             title: 'QUICK ACTIONS',
             color: AppTheme.gold,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -1251,7 +1155,7 @@ class _QuickActionsSection extends ConsumerWidget {
                 child: _ActionBtn(
                   icon: Icons.library_books,
                   label: 'Templates',
-                  color: Colors.deepPurple,
+                  color: const Color(0xFF5A3D8A),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1285,7 +1189,6 @@ class _ActionBtn extends StatefulWidget {
 
 class _ActionBtnState extends State<_ActionBtn> {
   bool _pressed = false;
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1296,37 +1199,24 @@ class _ActionBtnState extends State<_ActionBtn> {
       },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
-        scale: _pressed ? 0.95 : 1.0,
+        scale: _pressed ? 0.94 : 1.0,
         duration: const Duration(milliseconds: 100),
         child: Container(
-          height: 60,
+          height: 54,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                widget.color.withOpacity(0.9),
-                widget.color.withOpacity(0.6),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: widget.color.withOpacity(0.35),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: widget.color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: widget.color.withOpacity(0.5)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(widget.icon, color: Colors.white, size: 20),
+              Icon(widget.icon, color: widget.color, size: 19),
               const SizedBox(width: 8),
               Text(
                 widget.label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: widget.color,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -1340,13 +1230,13 @@ class _ActionBtnState extends State<_ActionBtn> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SHARED
+// SHARED HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
-class _SectionHeader extends StatelessWidget {
+class _SectionLabel extends StatelessWidget {
   final IconData icon;
   final String title;
   final Color color;
-  const _SectionHeader({
+  const _SectionLabel({
     required this.icon,
     required this.title,
     required this.color,
@@ -1359,7 +1249,7 @@ class _SectionHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withOpacity(0.14),
             borderRadius: BorderRadius.circular(7),
           ),
           child: Icon(icon, color: color, size: 13),
@@ -1371,7 +1261,7 @@ class _SectionHeader extends StatelessWidget {
             color: color,
             fontSize: 11,
             fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
+            letterSpacing: 1.4,
           ),
         ),
       ],
@@ -1379,36 +1269,29 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String message, sub;
-  final Color color;
-  const _EmptyState({
-    required this.icon,
-    required this.message,
-    required this.sub,
-    required this.color,
-  });
+class _Empty extends StatelessWidget {
+  final String icon, message, sub;
+  const _Empty({required this.icon, required this.message, required this.sub});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: 22),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: color.withOpacity(0.15)),
+        color: _kCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white12),
       ),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 32, color: color.withOpacity(0.5)),
-            const SizedBox(height: 7),
+            Text(icon, style: const TextStyle(fontSize: 32)),
+            const SizedBox(height: 8),
             Text(
               message,
-              style: TextStyle(
-                color: color.withOpacity(0.8),
+              style: const TextStyle(
+                color: Colors.white60,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -1416,7 +1299,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               sub,
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
+              style: const TextStyle(color: Colors.white30, fontSize: 11),
             ),
           ],
         ),
@@ -1425,18 +1308,33 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _SectionShimmer extends StatelessWidget {
-  final String label;
-  const _SectionShimmer({required this.label});
-
+class _LoadingBlock extends StatelessWidget {
+  final double height;
+  const _LoadingBlock({required this.height});
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      height: height,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      decoration: BoxDecoration(
+        color: _kCard,
+        borderRadius: BorderRadius.circular(14),
+      ),
+    );
+  }
+}
+
+class _SectionShimmer extends StatelessWidget {
+  final String label;
+  const _SectionShimmer({required this.label});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(15),
+        color: _kCard,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Center(
         child: Text(label, style: const TextStyle(color: Colors.white24)),

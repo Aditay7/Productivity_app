@@ -24,40 +24,28 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get safe area bottom to properly float the nav bar
-    final bottomPad = MediaQuery.of(context).padding.bottom;
-
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
-      // extendBody so content renders behind the transparent wrapper,
-      // but FAB still anchors ABOVE the nav bar height
-      extendBody: true,
       bottomNavigationBar: _FloatingNavBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
-        bottomPad: bottomPad,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PREMIUM FLOATING BOTTOM NAV BAR
+// FLOATING NAV BAR  (no extendBody — FAB auto-anchors above this widget)
 // ─────────────────────────────────────────────────────────────────────────────
 class _FloatingNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
-  final double bottomPad;
 
-  const _FloatingNavBar({
-    required this.currentIndex,
-    required this.onTap,
-    required this.bottomPad,
-  });
+  const _FloatingNavBar({required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
     final items = [
       _NI(
         Icons.home_rounded,
@@ -75,80 +63,79 @@ class _FloatingNavBar extends StatelessWidget {
       _NI(Icons.flag_rounded, Icons.flag_outlined, 'Goals', Colors.green),
     ];
 
-    // Total height the scaffold reserves for nav = pill(66) + hPad(8+8) + bottomPad
-    return SizedBox(
-      height: 66 + 16 + bottomPad,
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Container(
-          height: 66,
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF14112A),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: AppTheme.primaryPurple.withOpacity(0.12),
-                blurRadius: 20,
-              ),
-            ],
-          ),
-          child: Row(
-            children: items.asMap().entries.map((e) {
-              final i = e.key;
-              final item = e.value;
-              final selected = currentIndex == i;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onTap(i),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    margin: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? item.color.withOpacity(0.18)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedScale(
-                          scale: selected ? 1.15 : 1.0,
-                          duration: const Duration(milliseconds: 220),
-                          child: Icon(
-                            selected ? item.filled : item.outlined,
-                            color: selected ? item.color : Colors.white30,
-                            size: 22,
-                          ),
+    return Container(
+      // Transparent outer so background shows through the gaps
+      color: Colors.transparent,
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 8,
+        bottom: bottomPad + 12,
+      ),
+      child: Container(
+        height: 64,
+        decoration: BoxDecoration(
+          color: const Color(0xFF120F25),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.white.withOpacity(0.07)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: items.asMap().entries.map((e) {
+            final i = e.key;
+            final item = e.value;
+            final selected = currentIndex == i;
+
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => onTap(i),
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? item.color.withOpacity(0.16)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedScale(
+                        scale: selected ? 1.14 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          selected ? item.filled : item.outlined,
+                          color: selected ? item.color : Colors.white30,
+                          size: 21,
                         ),
-                        const SizedBox(height: 3),
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 220),
-                          style: TextStyle(
-                            color: selected ? item.color : Colors.white30,
-                            fontSize: selected ? 10 : 9,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            letterSpacing: 0.3,
-                          ),
-                          child: Text(item.label),
+                      ),
+                      const SizedBox(height: 3),
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 200),
+                        style: TextStyle(
+                          color: selected ? item.color : Colors.white30,
+                          fontSize: 9.5,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          letterSpacing: 0.2,
                         ),
-                      ],
-                    ),
+                        child: Text(item.label),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );

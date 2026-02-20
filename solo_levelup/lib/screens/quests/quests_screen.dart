@@ -165,13 +165,7 @@ class _QuestsHeader extends StatelessWidget {
     );
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1A0533), Color(0xFF110628), Color(0xFF0A0E27)],
-        ),
-      ),
+      decoration: const BoxDecoration(color: Color(0xFF120F25)),
       child: SafeArea(
         bottom: false,
         child: Column(
