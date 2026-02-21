@@ -76,15 +76,15 @@ enum StatType {
   int get colorValue {
     switch (this) {
       case StatType.strength:
-        return 0xFFE74C3C; // Red
+        return 0xFFFF4D4D; // Premium Red
       case StatType.intelligence:
-        return 0xFF3498DB; // Blue
+        return 0xFF4DA3FF; // Premium Blue
       case StatType.discipline:
-        return 0xFF9B59B6; // Purple
+        return 0xFFA855F7; // Premium Purple
       case StatType.wealth:
-        return 0xFFF39C12; // Gold
+        return 0xFF22C55E; // Premium Green
       case StatType.charisma:
-        return 0xFFE91E63; // Pink
+        return 0xFFF59E0B; // Premium Amber
     }
   }
 

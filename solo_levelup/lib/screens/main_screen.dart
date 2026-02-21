@@ -294,10 +294,10 @@ class _FloatingNavBar extends StatelessWidget {
         Colors.blue,
       ),
       _NI(
-        Icons.favorite_rounded,
-        Icons.favorite_border_rounded,
-        'Cardio',
-        Colors.redAccent,
+        Icons.flag_rounded,
+        Icons.outlined_flag_rounded,
+        'Goals',
+        Colors.green,
       ),
     ];
 
