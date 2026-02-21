@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quest_provider.dart';
 import '../../providers/player_provider.dart';
 import '../../data/repositories/quest_repository.dart';
+// Empty
 import '../../core/constants/difficulty.dart';
-import '../../core/constants/stat_types.dart';
 import '../../app/theme.dart';
 import '../../widgets/quest/quest_timer_widget.dart';
 import 'add_quest_screen.dart';
@@ -480,255 +480,191 @@ class _QuestCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 10), // Short margin
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isActive
-                ? [
-                    statColor.withOpacity(0.12),
-                    const Color(0xFF16152B),
-                    const Color(0xFF131222),
-                  ]
-                : [const Color(0xFF16152B), const Color(0xFF131222)],
-            stops: isActive ? const [0.0, 0.5, 1.0] : const [0.0, 1.0],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isActive
-                ? statColor.withOpacity(0.25)
-                : Colors.white.withOpacity(0.05),
-            width: 1.0,
-          ),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             if (isActive)
               BoxShadow(
-                color: statColor.withOpacity(0.08),
+                color: statColor.withOpacity(0.1),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            children: [
-              // Subtle ambient glow for active quests
-              if (isActive)
-                Positioned(
-                  top: -30,
-                  right: -30,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: statColor.withOpacity(0.1),
-                    ),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                      child: const SizedBox(),
-                    ),
-                  ),
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              // Completely translucent background, no solid colours
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isActive
+                      ? [
+                          statColor.withOpacity(0.15),
+                          Colors.white.withOpacity(0.02),
+                        ]
+                      : [
+                          Colors.white.withOpacity(0.06),
+                          Colors.white.withOpacity(0.01),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isActive
+                      ? statColor.withOpacity(0.3)
+                      : Colors.white.withOpacity(0.05),
+                  width: 0.5, // Thin, sharp border
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ROW 1: Icon + Title/Chips + Check/Done
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              child: Stack(
+                children: [
+                  // Sleek active accent strip on the left edge
+                  if (isActive)
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: 3,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [statColor, statColor.withOpacity(0.2)],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      14,
+                      12,
+                      12,
+                      12,
+                    ), // Short inner padding
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment
+                          .center, // Center aligned for short card
                       children: [
-                        // Stat Icon
+                        // Left: Icon Bubble
                         Container(
-                          width: 42,
-                          height: 42,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                statColor.withOpacity(isActive ? 0.25 : 0.1),
-                                statColor.withOpacity(isActive ? 0.05 : 0.0),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
+                            color: statColor.withOpacity(0.12),
+                            shape: BoxShape.circle,
                             border: Border.all(
-                              color: statColor.withOpacity(
-                                isActive ? 0.3 : 0.1,
-                              ),
+                              color: statColor.withOpacity(0.3),
                               width: 1,
                             ),
                           ),
                           child: Center(
                             child: Text(
                               quest.statType.emoji,
-                              style: TextStyle(fontSize: isActive ? 20 : 18),
+                              style: TextStyle(fontSize: 18),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Title & Chips
+
+                        // Center: Title + Compact Chips
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 quest.title,
                                 style: TextStyle(
                                   color: isActive
                                       ? Colors.white.withOpacity(0.95)
-                                      : Colors.white.withOpacity(0.5),
+                                      : Colors.white.withOpacity(0.4),
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.2,
-                                  height: 1.2,
+                                  height: 1.1,
                                   decoration: isActive
                                       ? null
                                       : TextDecoration.lineThrough,
-                                  decorationColor: Colors.white30,
+                                  decorationColor: Colors.white24,
                                 ),
-                                maxLines: 2,
+                                maxLines:
+                                    1, // Force a single line for "short" preference
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 6),
+
+                              // Inline metadata chips
                               Row(
                                 children: [
-                                  _DiffChip(diff),
-                                  const SizedBox(width: 6),
-                                  _StatChip(quest.statType),
+                                  _GlassBadge(diff.name, diff.color),
+                                  const SizedBox(width: 8),
+                                  _GlassStat(
+                                    Icons.bolt,
+                                    '+${quest.xpReward}',
+                                    AppTheme.gold,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _GlassStat(
+                                    Icons.timer_outlined,
+                                    '${quest.timeEstimatedMinutes}m',
+                                    Colors.white.withOpacity(0.6),
+                                  ),
                                 ],
                               ),
+
+                              // If expanded details are needed, show below
+                              if (isActive &&
+                                  quest.timeActualSeconds != null &&
+                                  quest.timeActualSeconds > 0) ...[
+                                const SizedBox(height: 6),
+                                QuestTimerWidget(quest: quest, onTap: onTap),
+                              ],
+
+                              if (!isActive &&
+                                  quest.productivityScore != null) ...[
+                                const SizedBox(height: 6),
+                                _GlassStat(
+                                  Icons.analytics_rounded,
+                                  '${quest.productivityScore!.round()}% Focus',
+                                  Colors.blue,
+                                ),
+                              ],
                             ],
                           ),
                         ),
-                        if (isActive) ...[
-                          const SizedBox(width: 8),
-                          _CompleteBtn(
+
+                        // Right: Circular Check Button (much smaller)
+                        if (isActive)
+                          _GlassCompleteBtn(
                             isCompleting: isCompleting,
                             onTap: onComplete,
-                          ),
-                        ] else ...[
+                            color: statColor,
+                          )
+                        else
                           Padding(
-                            padding: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.only(left: 8),
                             child: Icon(
                               Icons.check_circle_rounded,
-                              color: Colors.green.withOpacity(0.8),
+                              color: Colors.white.withOpacity(0.2),
                               size: 24,
                             ),
                           ),
-                        ],
                       ],
                     ),
-
-                    // Description
-                    if (quest.description != null &&
-                        quest.description!.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        quest.description!,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 12,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-
-                    const SizedBox(height: 12),
-
-                    // Divider over Info Chips
-                    Container(
-                      height: 1,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.0),
-                            Colors.white.withOpacity(0.05),
-                            Colors.white.withOpacity(0.0),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Info Chips row
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _InfoChip(
-                          Icons.timer_outlined,
-                          '${quest.timeEstimatedMinutes}m',
-                          Colors.white.withOpacity(0.6),
-                        ),
-                        _InfoChip(
-                          Icons.bolt_rounded,
-                          '+${quest.xpReward} XP',
-                          AppTheme.gold,
-                        ),
-                        if (quest.deadline != null)
-                          _InfoChip(
-                            Icons.calendar_today_rounded,
-                            _formatDate(quest.deadline!),
-                            Colors.orange.withOpacity(0.9),
-                          ),
-                      ],
-                    ),
-
-                    // Timer widget (active only)
-                    if (isActive) ...[
-                      const SizedBox(height: 10),
-                      QuestTimerWidget(quest: quest, onTap: onTap),
-                    ],
-
-                    // Performance metrics (completed only)
-                    if (!isActive && quest.productivityScore != null) ...[
-                      const SizedBox(height: 10),
-                      _PerformanceBar(
-                        score: quest.productivityScore!.toDouble(),
-                      ),
-                    ],
-
-                    // Completed at
-                    if (!isActive && quest.completedAt != null) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.verified,
-                            size: 14,
-                            color: Colors.green.withOpacity(0.8),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Completed ${_formatDate(quest.completedAt!)}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.4),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -746,76 +682,57 @@ class _QuestCard extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+  // Removed unused `_formatDate`
 }
 
-// ── Small inner widgets ───────────────────────────────────────────────────────
-class _DiffChip extends StatelessWidget {
-  final Difficulty diff;
-  const _DiffChip(this.diff);
+// ── Translucent Glass Widgets ─────────────────────────────────────────────
+
+class _GlassBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _GlassBadge(this.label, this.color);
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: diff.color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: diff.color.withOpacity(0.2)),
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.3), width: 0.5),
       ),
       child: Text(
-        diff.name,
+        label,
         style: TextStyle(
-          color: diff.color.withOpacity(0.9),
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 }
 
-class _StatChip extends StatelessWidget {
-  final StatType stat;
-  const _StatChip(this.stat);
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: stat.color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: stat.color.withOpacity(0.15)),
-      ),
-      child: Text(
-        '${stat.emoji} ${stat.displayName}',
-        style: TextStyle(
-          color: stat.color.withOpacity(0.9),
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
+class _GlassStat extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _InfoChip(this.icon, this.label, this.color);
+  const _GlassStat(this.icon, this.label, this.color);
+
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
+        Icon(icon, size: 12, color: color.withOpacity(0.8)),
+        const SizedBox(width: 3),
         Text(
           label,
           style: TextStyle(
-            color: color.withOpacity(0.9),
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+            color: color,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
           ),
         ),
       ],
@@ -823,103 +740,55 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
-class _CompleteBtn extends StatelessWidget {
+class _GlassCompleteBtn extends StatelessWidget {
   final bool isCompleting;
   final VoidCallback? onTap;
-  const _CompleteBtn({required this.isCompleting, this.onTap});
+  final Color color;
+  const _GlassCompleteBtn({
+    required this.isCompleting,
+    this.onTap,
+    required this.color,
+  });
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: isCompleting ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isCompleting
-                ? [Colors.white10, Colors.white10]
-                : [
-                    Colors.green.withOpacity(0.8),
-                    Colors.green.withOpacity(0.4),
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: isCompleting
+              ? Colors.white.withOpacity(0.05)
+              : color.withOpacity(0.2),
           shape: BoxShape.circle,
+          border: Border.all(
+            color: isCompleting ? Colors.transparent : color.withOpacity(0.5),
+            width: 1,
+          ),
           boxShadow: isCompleting
               ? null
               : [
                   BoxShadow(
-                    color: Colors.green.withOpacity(0.3),
+                    color: color.withOpacity(0.3),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    spreadRadius: -2,
                   ),
                 ],
         ),
-        child: Center(
-          child: isCompleting
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
+        child: isCompleting
+            ? const Center(
+                child: SizedBox(
+                  width: 14,
+                  height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: Colors.white54,
                   ),
-                )
-              : const Icon(Icons.check, color: Colors.white, size: 24),
-        ),
-      ),
-    );
-  }
-}
-
-class _PerformanceBar extends StatelessWidget {
-  final double score;
-  const _PerformanceBar({required this.score});
-  @override
-  Widget build(BuildContext context) {
-    final color = score >= 80
-        ? Colors.green
-        : score >= 60
-        ? Colors.blue
-        : score >= 40
-        ? Colors.orange
-        : Colors.red;
-    final label = score >= 80
-        ? '🏆 Excellent'
-        : score >= 60
-        ? '👍 Good'
-        : score >= 40
-        ? '📉 Average'
-        : '⚠️ Below target';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            '${score.round()}%',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-        ],
+                ),
+              )
+            : Icon(Icons.check_rounded, color: Colors.white, size: 20),
       ),
     );
   }

@@ -149,8 +149,8 @@ class QuestRepository {
 
         return {
           'quest': quest,
-          'xpEarned': response['xpEarned'] as int?,
-          'xpModifier': response['xpModifier'] as double?,
+          'xpEarned': (response['xpEarned'] as num?)?.toInt(),
+          'xpModifier': (response['xpModifier'] as num?)?.toDouble(),
           'performanceMessage': response['performanceMessage'] as String?,
           'newAchievements': [], // Achievements are handled separately
         };

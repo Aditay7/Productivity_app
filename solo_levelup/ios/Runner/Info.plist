@@ -22,6 +22,14 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>UIStatusBarHidden</key>
+	<false/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>The app needs speech recognition to allow voice input.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The app needs microphone access to record voice.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>This application tracks your steps to monitor cardio and fitness leveling.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

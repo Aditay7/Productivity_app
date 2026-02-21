@@ -7,6 +7,7 @@ import '../../providers/goal_provider.dart';
 import '../../core/constants/stat_types.dart';
 import '../../app/theme.dart';
 import '../../data/models/player.dart';
+import '../../widgets/dashboard/activity_heatmap_section.dart';
 
 // Solid card color used consistently across the dashboard
 const _kCard = Color(0xFF1A1630);
@@ -125,6 +126,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 error: (_, __) => const SizedBox(),
               ),
             ),
+
+            // ── Activity Heatmap ─────────────────────────────────────────
+            const SliverToBoxAdapter(child: ActivityHeatmapSection()),
 
             // ── Active Goals ──────────────────────────────────────────
             SliverToBoxAdapter(

@@ -163,9 +163,14 @@ class Quest {
           ? DateTime.parse(map['deadline'] as String)
           : null,
       isOverdue: (map['isOverdue'] ?? map['is_overdue']) as bool?,
-      accuracyScore: (map['accuracyScore'] ?? map['accuracy_score']) as double?,
+      accuracyScore: (map['accuracyScore'] ?? map['accuracy_score']) != null
+          ? ((map['accuracyScore'] ?? map['accuracy_score']) as num).toDouble()
+          : null,
       productivityScore:
-          (map['productivityScore'] ?? map['productivity_score']) as double?,
+          (map['productivityScore'] ?? map['productivity_score']) != null
+          ? ((map['productivityScore'] ?? map['productivity_score']) as num)
+                .toDouble()
+          : null,
       focusRating: (map['focusRating'] ?? map['focus_rating']) as int?,
       distractionCount:
           (map['distractionCount'] ?? map['distraction_count']) as int?,

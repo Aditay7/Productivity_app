@@ -5,9 +5,9 @@ import 'dashboard/dashboard_screen.dart';
 import 'quests/quests_screen.dart';
 import 'quests/add_quest_screen.dart';
 import 'analytics/productivity_dashboard_screen.dart';
-import 'goals/goals_screen.dart';
 import 'templates/manage_templates_screen.dart';
 import 'goals/create_goal_screen.dart';
+import 'goals/goals_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -293,7 +293,12 @@ class _FloatingNavBar extends StatelessWidget {
         'Stats',
         Colors.blue,
       ),
-      _NI(Icons.flag_rounded, Icons.flag_outlined, 'Goals', Colors.green),
+      _NI(
+        Icons.favorite_rounded,
+        Icons.favorite_border_rounded,
+        'Cardio',
+        Colors.redAccent,
+      ),
     ];
 
     return Container(

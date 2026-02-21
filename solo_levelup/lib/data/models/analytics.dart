@@ -83,7 +83,10 @@ class HourCount {
   const HourCount({required this.hour, required this.count});
 
   factory HourCount.fromMap(Map<String, dynamic> map) {
-    return HourCount(hour: map['hour'] as int, count: map['count'] as int);
+    return HourCount(
+      hour: (map['hour'] as num).toInt(),
+      count: (map['count'] as num).toInt(),
+    );
   }
 
   String get timeString {
@@ -134,8 +137,8 @@ class DayPattern {
   factory DayPattern.fromMap(Map<String, dynamic> map) {
     return DayPattern(
       day: map['day'] as String,
-      dayIndex: map['dayIndex'] as int,
-      count: map['count'] as int,
+      dayIndex: (map['dayIndex'] as num).toInt(),
+      count: (map['count'] as num).toInt(),
     );
   }
 }
@@ -153,9 +156,13 @@ class QuestDifficultyStats {
 
   factory QuestDifficultyStats.fromMap(Map<String, dynamic> map) {
     return QuestDifficultyStats(
-      completed: map['completed'] as int,
-      totalTime: map['totalTime'] as int?,
-      averageTime: map['averageTime'] as int?,
+      completed: (map['completed'] as num).toInt(),
+      totalTime: map['totalTime'] != null
+          ? (map['totalTime'] as num).toInt()
+          : null,
+      averageTime: map['averageTime'] != null
+          ? (map['averageTime'] as num).toInt()
+          : null,
     );
   }
 }
@@ -179,7 +186,9 @@ class StatBalance {
 
   factory StatBalance.fromMap(Map<String, dynamic> map) {
     return StatBalance(
-      stats: Map<String, int>.from(map['stats'] as Map),
+      stats: (map['stats'] as Map).map(
+        (k, v) => MapEntry(k as String, (v as num).toInt()),
+      ),
       total: map['total'] as int,
       average: map['average'] as int,
       mostDeveloped: map['mostDeveloped'] as String,
@@ -202,8 +211,8 @@ class ProgressPeriod {
 
   factory ProgressPeriod.fromMap(Map<String, dynamic> map) {
     return ProgressPeriod(
-      questsCompleted: map['questsCompleted'] as int,
-      xpEarned: map['xpEarned'] as int,
+      questsCompleted: (map['questsCompleted'] as num).toInt(),
+      xpEarned: (map['xpEarned'] as num).toInt(),
       periodStart: DateTime.parse(
         (map['weekStart'] ?? map['monthStart']) as String,
       ),
@@ -232,12 +241,12 @@ class HabitStats {
     return HabitStats(
       id: map['id'] as String,
       title: map['title'] as String,
-      streak: map['streak'] as int,
-      completionRate: map['completionRate'] as int,
+      streak: (map['streak'] as num).toInt(),
+      completionRate: (map['completionRate'] as num).toInt(),
       lastCompleted: map['lastCompleted'] != null
           ? DateTime.parse(map['lastCompleted'] as String)
           : null,
-      totalCompletions: map['totalCompletions'] as int,
+      totalCompletions: (map['totalCompletions'] as num).toInt(),
     );
   }
 }

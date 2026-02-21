@@ -4,6 +4,8 @@ import '../../providers/goal_provider.dart';
 import '../../app/theme.dart';
 import 'create_goal_screen.dart';
 import '../habits/habit_calendar_screen.dart';
+import '../cardio/cardio_screen.dart';
+import '../settings/settings_screen.dart';
 
 const _kCard = Color(0xFF1A1630);
 const _kSurface = Color(0xFF120F25);
@@ -17,84 +19,101 @@ class GoalsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.darkBackground,
-      body: Column(
+      body: Row(
         children: [
-          // ── Custom Header ──────────────────────────────────────────
-          _GoalsHeader(
-            goalsAsync: goalsAsync,
-            onCalendar: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const HabitCalendarScreen()),
-            ),
-          ),
+          // ── Advanced Vertical Sidebar ──────────────────────────────
+          const _AdvancedVerticalSidebar(),
 
-          // ── Content ────────────────────────────────────────────────
+          // ── Main Content Area ──────────────────────────────────────
           Expanded(
-            child: goalsAsync.when(
-              data: (goals) {
-                final active = goals.where((g) => g.isActive).toList();
-                final completed = goals.where((g) => !g.isActive).toList();
+            child: Column(
+              children: [
+                // ── Custom Header ────────────────────────────────────
+                _GoalsHeader(goalsAsync: goalsAsync),
 
-                if (active.isEmpty && completed.isEmpty) {
-                  return _EmptyGoals();
-                }
+                // ── Content ──────────────────────────────────────────
+                Expanded(
+                  child: goalsAsync.when(
+                    data: (goals) {
+                      final active = goals.where((g) => g.isActive).toList();
+                      final completed = goals
+                          .where((g) => !g.isActive)
+                          .toList();
 
-                return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(goalProvider),
-                  color: AppTheme.gold,
-                  backgroundColor: _kCard,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                    children: [
-                      if (active.isNotEmpty) ...[
-                        _GroupLabel(
-                          'Active Goals',
-                          active.length,
-                          Colors.green,
+                      if (active.isEmpty && completed.isEmpty) {
+                        return _EmptyGoals();
+                      }
+
+                      return RefreshIndicator(
+                        onRefresh: () async => ref.invalidate(goalProvider),
+                        color: AppTheme.gold,
+                        backgroundColor: _kCard,
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                          children: [
+                            if (active.isNotEmpty) ...[
+                              _GroupLabel(
+                                'Active Goals',
+                                active.length,
+                                Colors.green,
+                              ),
+                              const SizedBox(height: 8),
+                              ...active.map(
+                                (g) => _GoalCard(
+                                  goal: g,
+                                  isActive: true,
+                                  ref: ref,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                            if (completed.isNotEmpty) ...[
+                              _GroupLabel(
+                                'Completed Goals',
+                                completed.length,
+                                Colors.white38,
+                              ),
+                              const SizedBox(height: 8),
+                              ...completed.map(
+                                (g) => _GoalCard(
+                                  goal: g,
+                                  isActive: false,
+                                  ref: ref,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        ...active.map(
-                          (g) => _GoalCard(goal: g, isActive: true, ref: ref),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      if (completed.isNotEmpty) ...[
-                        _GroupLabel(
-                          'Completed Goals',
-                          completed.length,
-                          Colors.white38,
-                        ),
-                        const SizedBox(height: 8),
-                        ...completed.map(
-                          (g) => _GoalCard(goal: g, isActive: false, ref: ref),
-                        ),
-                      ],
-                    ],
+                      );
+                    },
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(color: AppTheme.gold),
+                    ),
+                    error: (e, _) => Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '$e',
+                            style: const TextStyle(color: Colors.white54),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => ref.invalidate(goalProvider),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                );
-              },
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppTheme.gold),
-              ),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 12),
-                    Text('$e', style: const TextStyle(color: Colors.white54)),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => ref.invalidate(goalProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -109,8 +128,7 @@ class GoalsScreen extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _GoalsHeader extends StatelessWidget {
   final AsyncValue goalsAsync;
-  final VoidCallback onCalendar;
-  const _GoalsHeader({required this.goalsAsync, required this.onCalendar});
+  const _GoalsHeader({required this.goalsAsync});
 
   @override
   Widget build(BuildContext context) {
@@ -193,22 +211,6 @@ class _GoalsHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: onCalendar,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.calendar_month,
-                    color: Colors.white60,
-                    size: 20,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -763,6 +765,182 @@ class _NewGoalFAB extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADVANCED VERTICAL SIDEBAR
+// ─────────────────────────────────────────────────────────────────────────────
+class _AdvancedVerticalSidebar extends StatelessWidget {
+  const _AdvancedVerticalSidebar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      margin: const EdgeInsets.only(left: 12, top: 24, bottom: 24, right: 8),
+      decoration: BoxDecoration(
+        color: _kCard.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(4, 0),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          // Sidebar decorative top handle
+          Container(
+            width: 24,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  _SidebarItem(
+                    icon: Icons.monitor_heart_outlined,
+                    label: 'Cardio',
+                    color: Colors.redAccent,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CardioScreen()),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  _SidebarItem(
+                    icon: Icons.calendar_month_outlined,
+                    label: 'Habits',
+                    color: Colors.cyanAccent,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HabitCalendarScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  _SidebarItem(
+                    icon: Icons.settings_outlined,
+                    label: 'Options',
+                    color: Colors.white70,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          // Decorative bottom fading line
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [Colors.white.withOpacity(0.05), Colors.transparent],
+              ),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(24),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SidebarItem extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_SidebarItem> createState() => _SidebarItemState();
+}
+
+class _SidebarItemState extends State<_SidebarItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isHovered = true),
+      onTapUp: (_) {
+        setState(() => _isHovered = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(_isHovered ? 4.0 : 0.0, 0.0, 0.0)
+          ..scale(_isHovered ? 1.05 : 1.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: widget.color.withOpacity(_isHovered ? 0.2 : 0.08),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: widget.color.withOpacity(_isHovered ? 0.6 : 0.15),
+                  width: _isHovered ? 1.5 : 1.0,
+                ),
+                boxShadow: _isHovered
+                    ? [
+                        BoxShadow(
+                          color: widget.color.withOpacity(0.3),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Icon(widget.icon, color: widget.color, size: 24),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.label,
+              style: TextStyle(
+                color: widget.color.withOpacity(_isHovered ? 1.0 : 0.6),
+                fontSize: 10,
+                fontWeight: _isHovered ? FontWeight.w700 : FontWeight.w500,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
