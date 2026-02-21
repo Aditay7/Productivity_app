@@ -669,12 +669,12 @@ class _ActiveQuestCardState extends State<_ActiveQuestCard> {
                               runSpacing: 8,
                               children: [
                                 _PremiumPill(
-                                  label: widget.quest.statType.name
+                                  label: widget.quest.statType.displayName
                                       .toUpperCase(),
                                   color: statColor,
                                 ),
                                 _PremiumPill(
-                                  label: diff.name,
+                                  label: diff.displayName,
                                   color: diff.color,
                                 ),
                               ],
@@ -825,7 +825,7 @@ class _DoneQuestCard extends StatelessWidget {
                       const SizedBox(height: 4),
 
                       Text(
-                        'Stat: ${quest.statType.name}  •  Difficulty: ${diff.name}',
+                        'Stat: ${quest.statType.displayName}  •  Difficulty: ${diff.displayName}',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.3),
                           fontSize: 12,
