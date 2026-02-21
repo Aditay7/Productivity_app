@@ -19,7 +19,7 @@ class _CreateGoalScreenState extends ConsumerState<CreateGoalScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TextEditingController _targetController;
-  
+
   GoalType _type = GoalType.monthly;
   String _statType = 'strength';
   GoalUnit _unit = GoalUnit.quests;
@@ -28,7 +28,9 @@ class _CreateGoalScreenState extends ConsumerState<CreateGoalScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.goal?.title ?? '');
-    _descriptionController = TextEditingController(text: widget.goal?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.goal?.description ?? '',
+    );
     _targetController = TextEditingController(
       text: widget.goal?.targetValue.toString() ?? '10',
     );
@@ -41,7 +43,7 @@ class _CreateGoalScreenState extends ConsumerState<CreateGoalScreen> {
         title: Text(widget.goal == null ? 'Create Goal' : 'Edit Goal'),
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
+        color: const Color(0xFF120F25),
         child: Form(
           key: _formKey,
           child: ListView(
@@ -79,9 +81,21 @@ class _CreateGoalScreenState extends ConsumerState<CreateGoalScreen> {
               DropdownButtonFormField<String>(
                 value: _statType,
                 decoration: const InputDecoration(labelText: 'Stat Type'),
-                items: ['strength', 'intelligence', 'discipline', 'wealth', 'charisma']
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s.toUpperCase())))
-                    .toList(),
+                items:
+                    [
+                          'strength',
+                          'intelligence',
+                          'discipline',
+                          'wealth',
+                          'charisma',
+                        ]
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(s.toUpperCase()),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (v) => setState(() => _statType = v!),
               ),
               const SizedBox(height: 16),
@@ -90,7 +104,9 @@ class _CreateGoalScreenState extends ConsumerState<CreateGoalScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _targetController,
-                      decoration: const InputDecoration(labelText: 'Target Value'),
+                      decoration: const InputDecoration(
+                        labelText: 'Target Value',
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (v) {
                         if (v?.isEmpty ?? true) return 'Required';

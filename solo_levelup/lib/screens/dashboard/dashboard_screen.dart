@@ -7,9 +7,6 @@ import '../../providers/goal_provider.dart';
 import '../../core/constants/stat_types.dart';
 import '../../app/theme.dart';
 import '../../data/models/player.dart';
-import '../templates/manage_templates_screen.dart';
-import '../quests/add_quest_screen.dart';
-import '../quests/quest_timer_screen.dart';
 
 // Solid card color used consistently across the dashboard
 const _kCard = Color(0xFF1A1630);
@@ -29,7 +26,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   late AnimationController _statsCtrl;
   late Animation<double> _heroFade;
   late Animation<Offset> _heroSlide;
-  late Animation<double> _statsBounce;
 
   @override
   void initState() {
@@ -52,10 +48,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       begin: const Offset(0, -0.15),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOutCubic));
-    _statsBounce = CurvedAnimation(
-      parent: _statsCtrl,
-      curve: Curves.elasticOut,
-    );
 
     _heroCtrl.forward();
     Future.delayed(const Duration(milliseconds: 300), () {
@@ -104,56 +96,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               ),
             ),
 
-            // ── XP Bar ────────────────────────────────────────────────
+            // ── RPG Status Ring (XP ring + quick bento stats) ────────
             SliverToBoxAdapter(
               child: playerAsync.when(
-                data: (p) => _XpBar(player: p),
-                loading: () => const _LoadingBlock(height: 76),
-                error: (_, __) => const SizedBox(),
-              ),
-            ),
-
-            // ── Quick Stats ───────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                child: playerAsync.when(
-                  data: (p) => questsAsync.when(
-                    data: (q) => goalsAsync.when(
-                      data: (g) => _QuickStats(
-                        player: p,
-                        activeQuests: q.where((x) => !x.isCompleted).length,
-                        activeGoals: g.where((x) => x.isActive).length,
-                        bounce: _statsBounce,
-                      ),
-                      loading: () => const _LoadingBlock(height: 90),
-                      error: (_, __) => const SizedBox(),
+                data: (p) => questsAsync.when(
+                  data: (q) => goalsAsync.when(
+                    data: (g) => _XpRingSection(
+                      player: p,
+                      activeQuests: q.where((x) => !x.isCompleted).length,
+                      activeGoals: g.where((x) => x.isActive).length,
                     ),
-                    loading: () => const _LoadingBlock(height: 90),
+                    loading: () => const _LoadingBlock(height: 160),
                     error: (_, __) => const SizedBox(),
                   ),
-                  loading: () => const _LoadingBlock(height: 90),
+                  loading: () => const _LoadingBlock(height: 160),
                   error: (_, __) => const SizedBox(),
                 ),
-              ),
-            ),
-
-            // ── Attributes ────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: playerAsync.when(
-                data: (p) => _AttributesSection(player: p),
-                loading: () => const _LoadingBlock(height: 200),
+                loading: () => const _LoadingBlock(height: 160),
                 error: (_, __) => const SizedBox(),
               ),
             ),
 
-            // ── Today's Quests ────────────────────────────────────────
+            // ── Attributes Radar Chart ────────────────────────────────
             SliverToBoxAdapter(
-              child: questsAsync.when(
-                data: (q) => _TodayQuestsSection(
-                  quests: q.where((x) => !x.isCompleted).take(5).toList(),
-                ),
-                loading: () => const _SectionShimmer(label: "Today's Quests"),
+              child: playerAsync.when(
+                data: (p) => _AttributesRadarSection(player: p),
+                loading: () => const _LoadingBlock(height: 300),
                 error: (_, __) => const SizedBox(),
               ),
             ),
@@ -168,9 +136,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 error: (_, __) => const SizedBox(),
               ),
             ),
-
-            // ── Quick Actions ─────────────────────────────────────────
-            const SliverToBoxAdapter(child: _QuickActionsSection()),
 
             const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
@@ -412,6 +377,680 @@ class _HeroHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// RPG STATUS RING  —  Circular XP ring + 2×2 bento quick stats
+// ─────────────────────────────────────────────────────────────────────────────
+class _XpRingSection extends StatefulWidget {
+  final Player player;
+  final int activeQuests, activeGoals;
+  const _XpRingSection({
+    required this.player,
+    required this.activeQuests,
+    required this.activeGoals,
+  });
+  @override
+  State<_XpRingSection> createState() => _XpRingSectionState();
+}
+
+class _XpRingSectionState extends State<_XpRingSection>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    final progress = widget.player.xpToNextLevel > 0
+        ? (widget.player.xp / widget.player.xpToNextLevel).clamp(0.0, 1.0)
+        : 1.0;
+    _anim = Tween(
+      begin: 0.0,
+      end: progress,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.player;
+    final pct = p.xpToNextLevel > 0
+        ? (p.xp / p.xpToNextLevel * 100).toStringAsFixed(1)
+        : '100.0';
+
+    final bentoItems = [
+      (
+        Icons.local_fire_department,
+        '${p.currentStreak}',
+        'Streak',
+        Colors.orange,
+      ),
+      (
+        Icons.task_alt,
+        '${widget.activeQuests}',
+        'Quests',
+        AppTheme.primaryPurple,
+      ),
+      (Icons.flag_rounded, '${widget.activeGoals}', 'Goals', Colors.green),
+      (Icons.workspace_premium, '${p.totalStats}', 'Power', Colors.blue),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // ── Circular XP ring ───────────────────────────────────────
+          AnimatedBuilder(
+            animation: _anim,
+            builder: (_, __) => SizedBox(
+              width: 140,
+              height: 140,
+              child: CustomPaint(
+                painter: _RingPainter(
+                  progress: _anim.value,
+                  ringColor: AppTheme.primaryPurple,
+                  trackColor: Colors.white.withOpacity(0.06),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'LVL',
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      Text(
+                        '${p.level}',
+                        style: const TextStyle(
+                          color: AppTheme.gold,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                        ),
+                      ),
+                      Text(
+                        '$pct%',
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          // ── 2 × 2 bento stat tiles ────────────────────────────────
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: bentoItems.map((item) {
+                return SizedBox(
+                  width:
+                      (MediaQuery.of(context).size.width - 32 - 140 - 14 - 8) /
+                      2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _kCard,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: item.$4.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(item.$1, color: item.$4, size: 18),
+                        const SizedBox(height: 6),
+                        Text(
+                          item.$2,
+                          style: TextStyle(
+                            color: item.$4,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            height: 1.0,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          item.$3,
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Ring painter ──────────────────────────────────────────────────────────────
+class _RingPainter extends CustomPainter {
+  final double progress;
+  final Color ringColor, trackColor;
+  const _RingPainter({
+    required this.progress,
+    required this.ringColor,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - 8;
+    const strokeW = 10.0;
+
+    // Track
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = trackColor
+        ..strokeWidth = strokeW
+        ..style = PaintingStyle.stroke,
+    );
+
+    // Glow shadow
+    if (progress > 0.01) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        2 * math.pi * progress,
+        false,
+        Paint()
+          ..color = ringColor.withOpacity(0.3)
+          ..strokeWidth = strokeW + 6
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+      );
+    }
+
+    // Arc
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      Paint()
+        ..color = ringColor
+        ..strokeWidth = strokeW
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Gold tip dot
+    if (progress > 0.01) {
+      final tipAngle = -math.pi / 2 + 2 * math.pi * progress;
+      final tipX = center.dx + radius * math.cos(tipAngle);
+      final tipY = center.dy + radius * math.sin(tipAngle);
+      canvas.drawCircle(
+        Offset(tipX, tipY),
+        5,
+        Paint()
+          ..color = AppTheme.gold
+          ..style = PaintingStyle.fill,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ATTRIBUTES  —  Pentagon radar/spider chart
+// ─────────────────────────────────────────────────────────────────────────────
+class _AttributesRadarSection extends StatefulWidget {
+  final Player player;
+  const _AttributesRadarSection({required this.player});
+  @override
+  State<_AttributesRadarSection> createState() =>
+      _AttributesRadarSectionState();
+}
+
+class _AttributesRadarSectionState extends State<_AttributesRadarSection>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
+    Future.delayed(
+      const Duration(milliseconds: 400),
+      () => mounted ? _ctrl.forward() : null,
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final attrs = StatType.values
+        .map((t) => (t, widget.player.getStatValue(t)))
+        .toList();
+    final maxVal = attrs
+        .map((a) => a.$2)
+        .reduce(math.max)
+        .toDouble()
+        .clamp(1.0, 9999.0);
+
+    final values = attrs.map((a) => a.$2 / maxVal).toList();
+    final colors = attrs.map((a) => a.$1.color).toList();
+    final icons = attrs.map((a) => a.$1.icon).toList();
+    final names = attrs.map((a) => a.$1.displayName).toList();
+    final rawValues = attrs.map((a) => a.$2).toList();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(
+            icon: Icons.auto_graph,
+            title: 'ATTRIBUTES',
+            color: AppTheme.primaryPurple,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: _kCard,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppTheme.primaryPurple.withOpacity(0.2),
+              ),
+            ),
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── LEFT: Radar chart ──────────────────────────────
+                Expanded(
+                  child: AnimatedBuilder(
+                    animation: _anim,
+                    builder: (_, __) => SizedBox(
+                      height: 200,
+                      child: CustomPaint(
+                        painter: _RadarPainter(
+                          values: values,
+                          colors: colors,
+                          animValue: _anim.value,
+                          fillColor: AppTheme.primaryPurple.withOpacity(0.18),
+                          strokeColor: AppTheme.primaryPurple,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // ── DIVIDER ────────────────────────────────────────
+                Container(
+                  width: 1,
+                  height: 200,
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  color: Colors.white.withOpacity(0.06),
+                ),
+                // ── RIGHT: Mini arc rings ──────────────────────────
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(attrs.length, (i) {
+                      return _StatArcRing(
+                        icon: icons[i],
+                        name: names[i],
+                        color: colors[i],
+                        value: rawValues[i],
+                        ratio: values[i],
+                        animValue: _anim.value,
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Mini arc ring row widget ───────────────────────────────────────────────────
+/// Each stat appears as a small circular arc with label on the right.
+class _StatArcRing extends StatelessWidget {
+  final IconData icon;
+  final String name;
+  final Color color;
+  final int value;
+  final double ratio; // 0–1 relative to max stat
+  final double animValue; // 0–1 animation progress
+
+  const _StatArcRing({
+    required this.icon,
+    required this.name,
+    required this.color,
+    required this.value,
+    required this.ratio,
+    required this.animValue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          // ── Mini arc ring ────────
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CustomPaint(
+              painter: _ArcRingPainter(
+                progress: (ratio * animValue).clamp(0.0, 1.0),
+                color: color,
+                strokeWidth: 4.5,
+              ),
+              child: Center(child: Icon(icon, size: 13, color: color)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // ── Name + Value ────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: color.withOpacity(0.7),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  '$value pts',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Pct badge ────────
+          Text(
+            '${(ratio * 100).toStringAsFixed(0)}%',
+            style: TextStyle(
+              color: color.withOpacity(0.5),
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Arc ring painter ────────────────────────────────────────────────────────────
+class _ArcRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final double strokeWidth;
+
+  const _ArcRingPainter({
+    required this.progress,
+    required this.color,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - strokeWidth / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    const start = -math.pi / 2; // top
+    final sweep = 2 * math.pi * progress;
+
+    // Track ring
+    canvas.drawArc(
+      rect,
+      0,
+      2 * math.pi,
+      false,
+      Paint()
+        ..color = color.withOpacity(0.1)
+        ..strokeWidth = strokeWidth
+        ..style = PaintingStyle.stroke,
+    );
+
+    if (progress < 0.01) return;
+
+    // Glow
+    canvas.drawArc(
+      rect,
+      start,
+      sweep,
+      false,
+      Paint()
+        ..color = color.withOpacity(0.25)
+        ..strokeWidth = strokeWidth + 4
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+
+    // Arc
+    canvas.drawArc(
+      rect,
+      start,
+      sweep,
+      false,
+      Paint()
+        ..color = color
+        ..strokeWidth = strokeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Tip dot
+    final tipAngle = start + sweep;
+    canvas.drawCircle(
+      Offset(
+        center.dx + radius * math.cos(tipAngle),
+        center.dy + radius * math.sin(tipAngle),
+      ),
+      strokeWidth / 2 + 0.5,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ArcRingPainter old) => old.progress != progress;
+}
+
+// ── Radar CustomPainter ───────────────────────────────────────────────────────
+class _RadarPainter extends CustomPainter {
+  final List<double> values;
+  final List<Color> colors;
+  final double animValue;
+  final Color fillColor, strokeColor;
+
+  const _RadarPainter({
+    required this.values,
+    required this.colors,
+    required this.animValue,
+    required this.fillColor,
+    required this.strokeColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final n = values.length;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - 10;
+
+    // ── Grid rings ──────────────────────────────────────────────────
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.07)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    for (int ring = 1; ring <= 4; ring++) {
+      final r = radius * ring / 4;
+      final path = Path();
+      for (int i = 0; i < n; i++) {
+        final angle = -math.pi / 2 + 2 * math.pi * i / n;
+        final x = center.dx + r * math.cos(angle);
+        final y = center.dy + r * math.sin(angle);
+        i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+      }
+      path.close();
+      canvas.drawPath(path, gridPaint);
+    }
+
+    // ── Spokes ────────────────────────────────────────────────────
+    final spokePaint = Paint()
+      ..color = Colors.white.withOpacity(0.08)
+      ..strokeWidth = 1;
+    for (int i = 0; i < n; i++) {
+      final angle = -math.pi / 2 + 2 * math.pi * i / n;
+      canvas.drawLine(
+        center,
+        Offset(
+          center.dx + radius * math.cos(angle),
+          center.dy + radius * math.sin(angle),
+        ),
+        spokePaint,
+      );
+    }
+
+    // ── Filled polygon (animated) ─────────────────────────────────
+    final dataPath = Path();
+    for (int i = 0; i < n; i++) {
+      final angle = -math.pi / 2 + 2 * math.pi * i / n;
+      final r = radius * values[i] * animValue;
+      final x = center.dx + r * math.cos(angle);
+      final y = center.dy + r * math.sin(angle);
+      i == 0 ? dataPath.moveTo(x, y) : dataPath.lineTo(x, y);
+    }
+    dataPath.close();
+
+    // Glow fill
+    canvas.drawPath(
+      dataPath,
+      Paint()
+        ..color = fillColor
+        ..style = PaintingStyle.fill,
+    );
+
+    // Stroke
+    canvas.drawPath(
+      dataPath,
+      Paint()
+        ..color = strokeColor
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    // ── Vertex dots ───────────────────────────────────────────────
+    for (int i = 0; i < n; i++) {
+      final angle = -math.pi / 2 + 2 * math.pi * i / n;
+      final r = radius * values[i] * animValue;
+      final x = center.dx + r * math.cos(angle);
+      final y = center.dy + r * math.sin(angle);
+
+      // Glow aura
+      canvas.drawCircle(
+        Offset(x, y),
+        8,
+        Paint()
+          ..color = colors[i].withOpacity(0.25)
+          ..style = PaintingStyle.fill
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+
+      // Dot
+      canvas.drawCircle(
+        Offset(x, y),
+        4.5,
+        Paint()
+          ..color = colors[i]
+          ..style = PaintingStyle.fill,
+      );
+
+      // White center of dot
+      canvas.drawCircle(
+        Offset(x, y),
+        2,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill,
+      );
+
+      // Outer ring mark on spoke (100% position)
+      final outerX = center.dx + radius * math.cos(angle);
+      final outerY = center.dy + radius * math.sin(angle);
+      canvas.drawCircle(
+        Offset(outerX, outerY),
+        2.5,
+        Paint()
+          ..color = colors[i].withOpacity(0.4)
+          ..style = PaintingStyle.fill,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RadarPainter old) =>
+      old.animValue != animValue || old.values != values;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // XP BAR
 // ─────────────────────────────────────────────────────────────────────────────
 class _XpBar extends StatefulWidget {
@@ -564,149 +1203,6 @@ class _XpBarState extends State<_XpBar> with SingleTickerProviderStateMixin {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// QUICK STATS ROW
-// ─────────────────────────────────────────────────────────────────────────────
-class _QuickStats extends StatelessWidget {
-  final Player player;
-  final int activeQuests, activeGoals;
-  final Animation<double> bounce;
-
-  const _QuickStats({
-    required this.player,
-    required this.activeQuests,
-    required this.activeGoals,
-    required this.bounce,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      (
-        Icons.local_fire_department,
-        '${player.currentStreak}',
-        'Streak',
-        Colors.orange,
-      ),
-      (Icons.task_alt, '$activeQuests', 'Quests', AppTheme.primaryPurple),
-      (Icons.flag_rounded, '$activeGoals', 'Goals', Colors.green),
-      (Icons.workspace_premium, '${player.totalStats}', 'Power', Colors.blue),
-    ];
-
-    return AnimatedBuilder(
-      animation: bounce,
-      builder: (_, __) {
-        final v = bounce.value.clamp(0.0, 1.0);
-        return Transform.scale(
-          scale: 0.75 + 0.25 * v,
-          child: Opacity(
-            opacity: v,
-            child: SizedBox(
-              height: 88,
-              child: Row(
-                children: items.asMap().entries.map((e) {
-                  final idx = e.key;
-                  final (icon, value, label, color) = e.value;
-                  return Expanded(
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        left: idx == 0 ? 0 : 5,
-                        right: idx == 3 ? 0 : 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _kCard,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: color.withOpacity(0.25)),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(icon, color: color, size: 20),
-                          const SizedBox(height: 4),
-                          Text(
-                            value,
-                            style: TextStyle(
-                              color: color,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            label,
-                            style: const TextStyle(
-                              color: Colors.white38,
-                              fontSize: 9,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ATTRIBUTES SECTION
-// ─────────────────────────────────────────────────────────────────────────────
-class _AttributesSection extends StatelessWidget {
-  final Player player;
-  const _AttributesSection({required this.player});
-
-  @override
-  Widget build(BuildContext context) {
-    final attrs = StatType.values
-        .map((t) => (t, player.getStatValue(t)))
-        .toList();
-    final maxVal = attrs.map((a) => a.$2).reduce(math.max).toDouble();
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(
-            icon: Icons.auto_graph,
-            title: 'ATTRIBUTES',
-            color: AppTheme.primaryPurple,
-          ),
-          const SizedBox(height: 10),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final w = (constraints.maxWidth - 12) / 2;
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: attrs.map((a) {
-                  final ratio = maxVal > 0 ? a.$2 / maxVal : 0.0;
-                  final isLastSingle = attrs.length % 2 != 0 && a == attrs.last;
-                  return SizedBox(
-                    width: isLastSingle ? constraints.maxWidth : w,
-                    child: _StatGridCard(
-                      type: a.$1,
-                      value: a.$2,
-                      ratio: ratio,
-                      isFullWidth: isLastSingle,
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _StatGridCard extends StatefulWidget {
   final StatType type;
   final int value;
@@ -834,140 +1330,6 @@ class _StatGridCardState extends State<_StatGridCard>
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TODAY'S QUESTS
-// ─────────────────────────────────────────────────────────────────────────────
-class _TodayQuestsSection extends ConsumerWidget {
-  final List quests;
-  const _TodayQuestsSection({required this.quests});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _SectionLabel(
-                icon: Icons.today,
-                title: "TODAY'S QUESTS",
-                color: AppTheme.primaryPurple,
-              ),
-              Text(
-                '${quests.length} active',
-                style: const TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (quests.isEmpty)
-            _Empty(
-              icon: '⚔️',
-              message: 'No active quests',
-              sub: 'Tap + below to create one',
-            )
-          else
-            ...quests.map((q) => _DashQuestTile(quest: q)),
-        ],
-      ),
-    );
-  }
-}
-
-class _DashQuestTile extends ConsumerWidget {
-  final dynamic quest;
-  const _DashQuestTile({required this.quest});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final color = quest.statType.color as Color;
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => QuestTimerScreen(quest: quest)),
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 9),
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: _kCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.25)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  quest.statType.emoji,
-                  style: const TextStyle(fontSize: 20),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    quest.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.timer_outlined,
-                        size: 12,
-                        color: Colors.white38,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${quest.timeEstimatedMinutes}m',
-                        style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 11,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Icon(Icons.bolt, size: 12, color: AppTheme.gold),
-                      const SizedBox(width: 3),
-                      Text(
-                        '+${quest.xpReward} XP',
-                        style: const TextStyle(
-                          color: AppTheme.gold,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
-          ],
-        ),
       ),
     );
   }
@@ -1113,117 +1475,6 @@ class _DashGoalTileState extends State<_DashGoalTile>
             style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// QUICK ACTIONS
-// ─────────────────────────────────────────────────────────────────────────────
-class _QuickActionsSection extends ConsumerWidget {
-  const _QuickActionsSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(
-            icon: Icons.flash_on,
-            title: 'QUICK ACTIONS',
-            color: AppTheme.gold,
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _ActionBtn(
-                  icon: Icons.add_task,
-                  label: 'New Quest',
-                  color: AppTheme.primaryPurple,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddQuestScreen()),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _ActionBtn(
-                  icon: Icons.library_books,
-                  label: 'Templates',
-                  color: const Color(0xFF5A3D8A),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ManageTemplatesScreen(),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionBtn extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _ActionBtn({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-  @override
-  State<_ActionBtn> createState() => _ActionBtnState();
-}
-
-class _ActionBtnState extends State<_ActionBtn> {
-  bool _pressed = false;
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.94 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          height: 54,
-          decoration: BoxDecoration(
-            color: widget.color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: widget.color.withOpacity(0.5)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(widget.icon, color: widget.color, size: 19),
-              const SizedBox(width: 8),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  color: widget.color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
