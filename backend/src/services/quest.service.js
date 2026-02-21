@@ -2,6 +2,7 @@ import { Quest } from '../models/Quest.js';
 import { QuestTemplate } from '../models/QuestTemplate.js';
 import { AppError } from '../middleware/error.middleware.js';
 import playerService from './player.service.js';
+import goalService from './goal.service.js';
 
 export class QuestService {
     /**
@@ -162,7 +163,30 @@ export class QuestService {
         // Add XP to player
         await playerService.addXP(finalXP, quest.statType);
 
-        // Add XP to skill category if specified
+        // ── Auto-sync goal progress (fire-and-forget) ─────────────────
+        // Goals track quest counts / XP / streaks. Refresh them now so
+        // the user sees progress update immediately after completion.
+        try {
+            const updatedPlayer = await playerService.getPlayer();
+            const completedCount = await this.getCompletedCount();
+            await goalService.checkGoalsProgress(
+                {
+                    totalXp: updatedPlayer.totalXp ?? 0,
+                    currentStreak: updatedPlayer.currentStreak ?? 0,
+                    // Top-level stat fields on the Player model
+                    strength: updatedPlayer.strength ?? 0,
+                    intelligence: updatedPlayer.intelligence ?? 0,
+                    discipline: updatedPlayer.discipline ?? 0,
+                    wealth: updatedPlayer.wealth ?? 0,
+                    charisma: updatedPlayer.charisma ?? 0,
+                },
+                { completedCount }
+            );
+        } catch (goalErr) {
+            // Never let goal sync failure break quest completion
+            console.warn('[Goals] Auto-sync failed (non-fatal):', goalErr.message);
+        }
+
         let skillResult = null;
         if (quest.skillCategory) {
             const skillService = (await import('./skill.service.js')).default;

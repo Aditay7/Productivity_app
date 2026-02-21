@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/quest.dart';
 import '../data/repositories/quest_repository.dart';
 import 'player_provider.dart';
+import 'goal_provider.dart';
 
 /// Quest state notifier
 class QuestNotifier extends StateNotifier<AsyncValue<List<Quest>>> {
@@ -57,11 +58,14 @@ class QuestNotifier extends StateNotifier<AsyncValue<List<Quest>>> {
         focusRating: focusRating,
       );
 
-      // Add XP to player (already done by backend, but we refresh)
+      // Refresh player (XP already updated by backend)
       await _ref.read(playerProvider.notifier).loadPlayer();
 
       // Reload quests
       await loadQuests();
+
+      // ── Refresh goals so progress updates immediately ─────────────
+      _ref.invalidate(goalProvider);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }

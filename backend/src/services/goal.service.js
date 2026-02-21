@@ -1,4 +1,5 @@
 import { Goal } from '../models/Goal.js';
+import { Quest } from '../models/Quest.js';
 import { AppError } from '../middleware/error.middleware.js';
 
 export class GoalService {
@@ -14,7 +15,7 @@ export class GoalService {
      */
     async getAllGoals(filters = {}) {
         const query = {};
-        
+
         if (filters.type) query.type = filters.type;
         if (filters.statType) query.statType = filters.statType;
         if (filters.isCompleted !== undefined) query.isCompleted = filters.isCompleted;
@@ -67,7 +68,7 @@ export class GoalService {
      */
     async updateGoalProgress(id, newValue) {
         const goal = await this.getGoalById(id);
-        
+
         goal.currentValue = newValue;
         goal.updatedAt = new Date();
 
@@ -77,7 +78,7 @@ export class GoalService {
                 if (!milestone.reached && newValue >= milestone.value) {
                     milestone.reached = true;
                     milestone.reachedAt = new Date();
-                    
+
                     // Unlock achievement for this milestone
                     const achievement = {
                         title: `${milestone.label} Milestone Reached!`,
@@ -85,7 +86,7 @@ export class GoalService {
                         unlockedAt: new Date(),
                         milestoneValue: milestone.value
                     };
-                    
+
                     if (!goal.achievements) goal.achievements = [];
                     goal.achievements.push(achievement);
                 }
@@ -96,7 +97,7 @@ export class GoalService {
         if (newValue >= goal.targetValue && !goal.isCompleted) {
             goal.isCompleted = true;
             goal.completedAt = new Date();
-            
+
             // Unlock completion achievement
             const completionAchievement = {
                 title: `🏆 Goal Completed: ${goal.title}`,
@@ -104,7 +105,7 @@ export class GoalService {
                 unlockedAt: new Date(),
                 milestoneValue: goal.targetValue
             };
-            
+
             if (!goal.achievements) goal.achievements = [];
             goal.achievements.push(completionAchievement);
         }
@@ -134,25 +135,40 @@ export class GoalService {
     /**
      * Check and update all active goals based on player/quest data
      */
-    async checkGoalsProgress(playerData, questData) {
+    async checkGoalsProgress(playerData, _questData) {
         const activeGoals = await this.getActiveGoals();
-        
+
         for (const goal of activeGoals) {
             let newValue = goal.currentValue;
 
             switch (goal.unit) {
                 case 'xp':
                     if (goal.statType === 'total') {
-                        newValue = playerData.totalXp;
+                        newValue = playerData.totalXp ?? 0;
                     } else {
-                        newValue = playerData[goal.statType] || 0;
+                        newValue = playerData[goal.statType] ?? 0;
                     }
                     break;
-                case 'quests':
-                    newValue = questData.completedCount || 0;
+
+                case 'quests': {
+                    // Count only completed quests matching this goal's statType AND completed after the goal started
+                    const questQuery = {
+                        isCompleted: true,
+                    };
+
+                    if (goal.startDate) {
+                        questQuery.dateCompleted = { $gte: goal.startDate };
+                    }
+
+                    if (goal.statType && goal.statType !== 'total') {
+                        questQuery.statType = goal.statType;
+                    }
+                    newValue = await Quest.countDocuments(questQuery);
                     break;
+                }
+
                 case 'streak':
-                    newValue = playerData.currentStreak || 0;
+                    newValue = playerData.currentStreak ?? 0;
                     break;
             }
 

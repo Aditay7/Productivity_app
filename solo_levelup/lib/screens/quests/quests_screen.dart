@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quest_provider.dart';
@@ -165,88 +166,134 @@ class _QuestsHeader extends StatelessWidget {
     );
 
     return Container(
-      decoration: const BoxDecoration(color: Color(0xFF120F25)),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E1B3A), Color(0xFF120F25)],
+        ),
+      ),
       child: SafeArea(
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
               child: Row(
                 children: [
                   // Icon + title
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.gold.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.gold.withOpacity(0.3),
+                          AppTheme.gold.withOpacity(0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.gold.withOpacity(0.4)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.gold.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.task_alt,
                       color: AppTheme.gold,
-                      size: 22,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'QUEST BOARD',
                         style: TextStyle(
-                          color: Colors.white38,
+                          color: AppTheme.gold,
                           fontSize: 10,
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2.0,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
+                      SizedBox(height: 2),
                       Text(
                         'My Quests',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
                   ),
                   const Spacer(),
                   // Stats chips
-                  _HeaderChip('$active', 'Active', AppTheme.primaryPurple),
-                  const SizedBox(width: 8),
-                  _HeaderChip('$completed', 'Done', Colors.green),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _HeaderChip('$active', 'Active', AppTheme.primaryPurple),
+                      const SizedBox(height: 6),
+                      _HeaderChip('$completed', 'Done', Colors.green),
+                    ],
+                  ),
                 ],
               ),
             ),
             // Custom tab bar
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: tabController,
-                padding: const EdgeInsets.all(4),
-                dividerColor: Colors.transparent,
-                indicator: BoxDecoration(
-                  color: AppTheme.primaryPurple.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(9),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
                 ),
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white38,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
+                child: TabBar(
+                  controller: tabController,
+                  padding: const EdgeInsets.all(4),
+                  dividerColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.primaryPurple,
+                        AppTheme.primaryPurple.withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryPurple.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white54,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    letterSpacing: 0.5,
+                  ),
+                  tabs: const [
+                    Tab(text: '⚔️ Active'),
+                    Tab(text: '✅ Done'),
+                  ],
                 ),
-                tabs: [
-                  Tab(text: '⚔️  Active'),
-                  Tab(text: '✅  Completed'),
-                ],
               ),
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -262,29 +309,40 @@ class _HeaderChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.35)),
       ),
-      child: RichText(
-        text: TextSpan(
-          children: [
-            TextSpan(
-              text: count,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              count,
               style: TextStyle(
                 color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
               ),
             ),
-            TextSpan(
-              text: ' $label',
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -425,156 +483,251 @@ class _QuestCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [const Color(0xFF1A1F3A), statColor.withOpacity(0.1)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+            colors: isActive
+                ? [
+                    statColor.withOpacity(0.12),
+                    const Color(0xFF16152B),
+                    const Color(0xFF131222),
+                  ]
+                : [const Color(0xFF16152B), const Color(0xFF131222)],
+            stops: isActive ? const [0.0, 0.5, 1.0] : const [0.0, 1.0],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: statColor.withOpacity(isActive ? 0.35 : 0.15),
-            width: 1.2,
+            color: isActive
+                ? statColor.withOpacity(0.25)
+                : Colors.white.withOpacity(0.05),
+            width: 1.0,
           ),
           boxShadow: [
+            if (isActive)
+              BoxShadow(
+                color: statColor.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
             BoxShadow(
-              color: statColor.withOpacity(isActive ? 0.08 : 0.04),
-              blurRadius: 12,
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
             children: [
-              // Row 1: stat icon + title + complete btn
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
+              // Subtle ambient glow for active quests
+              if (isActive)
+                Positioned(
+                  top: -30,
+                  right: -30,
+                  child: Container(
+                    width: 120,
+                    height: 120,
                     decoration: BoxDecoration(
-                      color: statColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statColor.withOpacity(0.3)),
+                      shape: BoxShape.circle,
+                      color: statColor.withOpacity(0.1),
                     ),
-                    child: Center(
-                      child: Text(
-                        quest.statType.emoji,
-                        style: const TextStyle(fontSize: 22),
-                      ),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                      child: const SizedBox(),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ROW 1: Icon + Title/Chips + Check/Done
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          quest.title,
-                          style: TextStyle(
-                            color: isActive ? Colors.white : Colors.white54,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            decoration: isActive
-                                ? null
-                                : TextDecoration.lineThrough,
-                            decorationColor: Colors.white30,
+                        // Stat Icon
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                statColor.withOpacity(isActive ? 0.25 : 0.1),
+                                statColor.withOpacity(isActive ? 0.05 : 0.0),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: statColor.withOpacity(
+                                isActive ? 0.3 : 0.1,
+                              ),
+                              width: 1,
+                            ),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          child: Center(
+                            child: Text(
+                              quest.statType.emoji,
+                              style: TextStyle(fontSize: isActive ? 20 : 18),
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 4),
-                        // Difficulty + stat type chips
-                        Row(
-                          children: [
-                            _DiffChip(diff),
-                            const SizedBox(width: 6),
-                            _StatChip(quest.statType),
-                          ],
+                        const SizedBox(width: 12),
+                        // Title & Chips
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                quest.title,
+                                style: TextStyle(
+                                  color: isActive
+                                      ? Colors.white.withOpacity(0.95)
+                                      : Colors.white.withOpacity(0.5),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
+                                  height: 1.2,
+                                  decoration: isActive
+                                      ? null
+                                      : TextDecoration.lineThrough,
+                                  decorationColor: Colors.white30,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  _DiffChip(diff),
+                                  const SizedBox(width: 6),
+                                  _StatChip(quest.statType),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
+                        if (isActive) ...[
+                          const SizedBox(width: 8),
+                          _CompleteBtn(
+                            isCompleting: isCompleting,
+                            onTap: onComplete,
+                          ),
+                        ] else ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Icon(
+                              Icons.check_circle_rounded,
+                              color: Colors.green.withOpacity(0.8),
+                              size: 24,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                  ),
-                  if (isActive) ...[
-                    const SizedBox(width: 8),
-                    _CompleteBtn(isCompleting: isCompleting, onTap: onComplete),
-                  ] else ...[
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 24,
-                    ),
-                  ],
-                ],
-              ),
 
-              // Description
-              if (quest.description != null &&
-                  quest.description!.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(
-                  quest.description!,
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                    // Description
+                    if (quest.description != null &&
+                        quest.description!.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        quest.description!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
 
-              // Row 2: info chips
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  _InfoChip(
-                    Icons.timer_outlined,
-                    '${quest.timeEstimatedMinutes}m',
-                    Colors.white38,
-                  ),
-                  _InfoChip(Icons.bolt, '+${quest.xpReward} XP', AppTheme.gold),
-                  if (quest.deadline != null)
-                    _InfoChip(
-                      Icons.calendar_today,
-                      _formatDate(quest.deadline!),
-                      Colors.orange,
-                    ),
-                ],
-              ),
+                    const SizedBox(height: 12),
 
-              // Timer widget (active only)
-              if (isActive) ...[
-                const SizedBox(height: 10),
-                QuestTimerWidget(quest: quest, onTap: onTap),
-              ],
-
-              // Performance metrics (completed only)
-              if (!isActive && quest.productivityScore != null) ...[
-                const SizedBox(height: 10),
-                _PerformanceBar(score: quest.productivityScore!.toDouble()),
-              ],
-
-              // Completed at
-              if (!isActive && quest.completedAt != null) ...[
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.check_circle_outline,
-                      size: 13,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Completed ${_formatDate(quest.completedAt!)}',
-                      style: const TextStyle(
-                        color: Colors.white30,
-                        fontSize: 11,
+                    // Divider over Info Chips
+                    Container(
+                      height: 1,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withOpacity(0.0),
+                            Colors.white.withOpacity(0.05),
+                            Colors.white.withOpacity(0.0),
+                          ],
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 10),
+
+                    // Info Chips row
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _InfoChip(
+                          Icons.timer_outlined,
+                          '${quest.timeEstimatedMinutes}m',
+                          Colors.white.withOpacity(0.6),
+                        ),
+                        _InfoChip(
+                          Icons.bolt_rounded,
+                          '+${quest.xpReward} XP',
+                          AppTheme.gold,
+                        ),
+                        if (quest.deadline != null)
+                          _InfoChip(
+                            Icons.calendar_today_rounded,
+                            _formatDate(quest.deadline!),
+                            Colors.orange.withOpacity(0.9),
+                          ),
+                      ],
+                    ),
+
+                    // Timer widget (active only)
+                    if (isActive) ...[
+                      const SizedBox(height: 10),
+                      QuestTimerWidget(quest: quest, onTap: onTap),
+                    ],
+
+                    // Performance metrics (completed only)
+                    if (!isActive && quest.productivityScore != null) ...[
+                      const SizedBox(height: 10),
+                      _PerformanceBar(
+                        score: quest.productivityScore!.toDouble(),
+                      ),
+                    ],
+
+                    // Completed at
+                    if (!isActive && quest.completedAt != null) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            size: 14,
+                            color: Colors.green.withOpacity(0.8),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Completed ${_formatDate(quest.completedAt!)}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.4),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -603,18 +756,18 @@ class _DiffChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: diff.color.withOpacity(0.15),
+        color: diff.color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: diff.color.withOpacity(0.5)),
+        border: Border.all(color: diff.color.withOpacity(0.2)),
       ),
       child: Text(
         diff.name,
         style: TextStyle(
-          color: diff.color,
+          color: diff.color.withOpacity(0.9),
           fontSize: 10,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -627,17 +780,18 @@ class _StatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: stat.color.withOpacity(0.12),
+        color: stat.color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: stat.color.withOpacity(0.15)),
       ),
       child: Text(
         '${stat.emoji} ${stat.displayName}',
         style: TextStyle(
           color: stat.color.withOpacity(0.9),
           fontSize: 10,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -654,14 +808,14 @@ class _InfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: color),
+        Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
         Text(
           label,
           style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+            color: color.withOpacity(0.9),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -679,28 +833,41 @@ class _CompleteBtn extends StatelessWidget {
       onTap: isCompleting ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 36,
-        height: 36,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: isCompleting ? Colors.white10 : Colors.green.withOpacity(0.15),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isCompleting
-                ? Colors.white24
-                : Colors.green.withOpacity(0.5),
+          gradient: LinearGradient(
+            colors: isCompleting
+                ? [Colors.white10, Colors.white10]
+                : [
+                    Colors.green.withOpacity(0.8),
+                    Colors.green.withOpacity(0.4),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          shape: BoxShape.circle,
+          boxShadow: isCompleting
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Center(
           child: isCompleting
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.green,
+                    color: Colors.white,
                   ),
                 )
-              : const Icon(Icons.check, color: Colors.green, size: 18),
+              : const Icon(Icons.check, color: Colors.white, size: 24),
         ),
       ),
     );
@@ -775,20 +942,41 @@ class _EmptyQuestState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 56)),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.03),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Text(icon, style: const TextStyle(fontSize: 64)),
+          ),
+          const SizedBox(height: 24),
           Text(
             title,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             subtitle,
-            style: const TextStyle(color: Colors.white38, fontSize: 13),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -807,12 +995,15 @@ class _AddQuestFAB extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         gradient: const LinearGradient(
-          colors: [AppTheme.primaryPurple, AppTheme.gold],
+          colors: [AppTheme.primaryPurple, Color(0xFF9D65FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryPurple.withOpacity(0.5),
+            color: AppTheme.primaryPurple.withOpacity(0.4),
             blurRadius: 16,
+            spreadRadius: 2,
             offset: const Offset(0, 6),
           ),
         ],
@@ -826,18 +1017,19 @@ class _AddQuestFAB extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const AddQuestScreen()),
           ),
           child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add, color: Colors.white, size: 22),
+                Icon(Icons.add_rounded, color: Colors.white, size: 24),
                 SizedBox(width: 8),
                 Text(
                   'New Quest',
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
