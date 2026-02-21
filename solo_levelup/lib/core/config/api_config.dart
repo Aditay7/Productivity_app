@@ -9,6 +9,7 @@ class ApiConfig {
   static const String achievementsEndpoint = '/achievements';
   static const String analyticsEndpoint = '/analytics';
   static const String goalsEndpoint = '/goals';
+  static const String timerEndpoint = '/timer';
 
   // Timeout duration
   static const Duration timeout = Duration(seconds: 30);
