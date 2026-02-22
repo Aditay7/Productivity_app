@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/player_provider.dart';
 import '../../providers/quest_provider.dart';
@@ -152,7 +153,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 // ─────────────────────────────────────────────────────────────────────────────
 // HERO HEADER  — solid dark surface, no gradient
 // ─────────────────────────────────────────────────────────────────────────────
-class _HeroHeader extends StatelessWidget {
+class _HeroHeader extends ConsumerWidget {
   final Player player;
   final Animation<double> heroFade;
   final Animation<Offset> heroSlide;
@@ -166,7 +167,7 @@ class _HeroHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final hour = DateTime.now().hour;
     final greeting = hour < 12
         ? 'GOOD MORNING,'
@@ -281,46 +282,76 @@ class _HeroHeader extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Level badge — solid, no gradient
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.gold.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppTheme.gold, width: 1.5),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.military_tech,
-                              size: 16,
-                              color: Colors.black87,
+                      // Level badge & Logout Dropdown
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
                             ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'LVL',
-                              style: TextStyle(
-                                color: Colors.black54,
-                                fontSize: 8,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1,
+                            decoration: BoxDecoration(
+                              color: AppTheme.gold.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppTheme.gold,
+                                width: 1.5,
                               ),
                             ),
-                            Text(
-                              '${player.level}',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 18,
-                                height: 1.1,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.military_tech,
+                                  size: 16,
+                                  color: Colors.black87,
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'LVL',
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                                Text(
+                                  '${player.level}',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 18,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          InkWell(
+                            onTap: () async {
+                              // Perform logout and invalidate caches
+                              await ref.read(authProvider.notifier).logout();
+                              ref.invalidate(playerProvider);
+                              ref.invalidate(questProvider);
+                              ref.invalidate(goalProvider);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(6.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.logout,
+                                color: Colors.white54,
+                                size: 18,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

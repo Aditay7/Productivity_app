@@ -6,15 +6,15 @@ export class GoalService {
     /**
      * Create a new goal
      */
-    async createGoal(data) {
-        return await Goal.create(data);
+    async createGoal(userId, data) {
+        return await Goal.create({ ...data, userId });
     }
 
     /**
      * Get all goals
      */
-    async getAllGoals(filters = {}) {
-        const query = {};
+    async getAllGoals(userId, filters = {}) {
+        const query = { userId };
 
         if (filters.type) query.type = filters.type;
         if (filters.statType) query.statType = filters.statType;
@@ -26,9 +26,10 @@ export class GoalService {
     /**
      * Get active goals (not completed, within date range)
      */
-    async getActiveGoals() {
+    async getActiveGoals(userId) {
         const now = new Date();
         return await Goal.find({
+            userId,
             isCompleted: false,
             startDate: { $lte: now },
             endDate: { $gte: now }
@@ -38,10 +39,10 @@ export class GoalService {
     /**
      * Get goal by ID
      */
-    async getGoalById(id) {
-        const goal = await Goal.findById(id);
+    async getGoalById(userId, id) {
+        const goal = await Goal.findOne({ _id: id, userId });
         if (!goal) {
-            throw new AppError(404, 'Goal not found');
+            throw new AppError(404, 'Goal not found or unauthorized');
         }
         return goal;
     }
@@ -49,15 +50,15 @@ export class GoalService {
     /**
      * Update goal
      */
-    async updateGoal(id, data) {
-        const goal = await Goal.findByIdAndUpdate(
-            id,
+    async updateGoal(userId, id, data) {
+        const goal = await Goal.findOneAndUpdate(
+            { _id: id, userId },
             { ...data, updatedAt: new Date() },
             { new: true }
         );
 
         if (!goal) {
-            throw new AppError(404, 'Goal not found');
+            throw new AppError(404, 'Goal not found or unauthorized');
         }
 
         return goal;
@@ -66,8 +67,8 @@ export class GoalService {
     /**
      * Update goal progress
      */
-    async updateGoalProgress(id, newValue) {
-        const goal = await this.getGoalById(id);
+    async updateGoalProgress(userId, id, newValue) {
+        const goal = await this.getGoalById(userId, id);
 
         goal.currentValue = newValue;
         goal.updatedAt = new Date();
@@ -117,10 +118,10 @@ export class GoalService {
     /**
      * Delete goal
      */
-    async deleteGoal(id) {
-        const goal = await Goal.findByIdAndDelete(id);
+    async deleteGoal(userId, id) {
+        const goal = await Goal.findOneAndDelete({ _id: id, userId });
         if (!goal) {
-            throw new AppError(404, 'Goal not found');
+            throw new AppError(404, 'Goal not found or unauthorized');
         }
     }
 
@@ -135,8 +136,8 @@ export class GoalService {
     /**
      * Check and update all active goals based on player/quest data
      */
-    async checkGoalsProgress(playerData, _questData) {
-        const activeGoals = await this.getActiveGoals();
+    async checkGoalsProgress(userId, playerData, _questData) {
+        const activeGoals = await this.getActiveGoals(userId);
 
         for (const goal of activeGoals) {
             let newValue = goal.currentValue;
@@ -153,6 +154,7 @@ export class GoalService {
                 case 'quests': {
                     // Count only completed quests matching this goal's statType AND completed after the goal started
                     const questQuery = {
+                        userId,
                         isCompleted: true,
                     };
 
@@ -173,7 +175,7 @@ export class GoalService {
             }
 
             if (newValue !== goal.currentValue) {
-                await this.updateGoalProgress(goal._id, newValue);
+                await this.updateGoalProgress(userId, goal._id, newValue);
             }
         }
     }

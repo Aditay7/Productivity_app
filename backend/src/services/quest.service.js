@@ -8,19 +8,19 @@ export class QuestService {
     /**
      * Create a new quest
      */
-    async createQuest(data) {
-        const quest = await Quest.create(data);
+    async createQuest(userId, data) {
+        const quest = await Quest.create({ ...data, userId });
         return quest;
     }
 
     /**
      * Get all quests with optional filters
      */
-    async getAllQuests(filters = {}) {
+    async getAllQuests(userId, filters = {}) {
         // Lazy generation: Check for recurring quests due today
-        await this._generateDailyQuestsFromTemplates();
+        await this._generateDailyQuestsFromTemplates(userId);
 
-        const query = {};
+        const query = { userId };
 
         if (filters.isCompleted !== undefined) {
             query.isCompleted = filters.isCompleted;
@@ -51,11 +51,11 @@ export class QuestService {
     /**
      * Get quest by ID
      */
-    async getQuestById(id) {
-        const quest = await Quest.findById(id);
+    async getQuestById(userId, id) {
+        const quest = await Quest.findOne({ _id: id, userId });
 
         if (!quest) {
-            throw new AppError(404, 'Quest not found');
+            throw new AppError(404, 'Quest not found or unauthorized');
         }
 
         return quest;
@@ -64,9 +64,9 @@ export class QuestService {
     /**
      * Get today's quests
      */
-    async getTodayQuests() {
+    async getTodayQuests(userId) {
         // Lazy generation: Check for recurring quests due today
-        await this._generateDailyQuestsFromTemplates();
+        await this._generateDailyQuestsFromTemplates(userId);
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -74,6 +74,7 @@ export class QuestService {
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         return await Quest.find({
+            userId,
             dateCreated: {
                 $gte: today,
                 $lt: tomorrow,
@@ -85,11 +86,11 @@ export class QuestService {
     /**
      * Update quest
      */
-    async updateQuest(id, data) {
-        const quest = await Quest.findByIdAndUpdate(id, data, { new: true }).populate('templateId');
+    async updateQuest(userId, id, data) {
+        const quest = await Quest.findOneAndUpdate({ _id: id, userId }, data, { new: true }).populate('templateId');
 
         if (!quest) {
-            throw new AppError(404, 'Quest not found');
+            throw new AppError(404, 'Quest not found or unauthorized');
         }
 
         return quest;
@@ -98,8 +99,8 @@ export class QuestService {
     /**
      * Complete a quest
      */
-    async completeQuest(id) {
-        const quest = await this.getQuestById(id);
+    async completeQuest(userId, id) {
+        const quest = await this.getQuestById(userId, id);
 
         if (quest.isCompleted) {
             // Idempotency: If already completed, return success
@@ -110,7 +111,7 @@ export class QuestService {
         }
 
         // Get current player for streak
-        const player = await playerService.getPlayer();
+        const player = await playerService.getPlayer(userId);
 
         // Update quest
         quest.isCompleted = true;
@@ -161,15 +162,16 @@ export class QuestService {
         }
 
         // Add XP to player
-        await playerService.addXP(finalXP, quest.statType);
+        await playerService.addXP(userId, finalXP, quest.statType);
 
         // ── Auto-sync goal progress (fire-and-forget) ─────────────────
         // Goals track quest counts / XP / streaks. Refresh them now so
         // the user sees progress update immediately after completion.
         try {
-            const updatedPlayer = await playerService.getPlayer();
-            const completedCount = await this.getCompletedCount();
+            const updatedPlayer = await playerService.getPlayer(userId);
+            const completedCount = await this.getCompletedCount(userId);
             await goalService.checkGoalsProgress(
+                userId,
                 {
                     totalXp: updatedPlayer.totalXp ?? 0,
                     currentStreak: updatedPlayer.currentStreak ?? 0,
@@ -190,7 +192,7 @@ export class QuestService {
         let skillResult = null;
         if (quest.skillCategory) {
             const skillService = (await import('./skill.service.js')).default;
-            skillResult = await skillService.addSkillXP(quest.skillCategory, finalXP);
+            skillResult = await skillService.addSkillXP(userId, quest.skillCategory, finalXP);
         }
 
         return {
@@ -205,26 +207,26 @@ export class QuestService {
     /**
      * Delete quest
      */
-    async deleteQuest(id) {
-        const quest = await Quest.findByIdAndDelete(id);
+    async deleteQuest(userId, id) {
+        const quest = await Quest.findOneAndDelete({ _id: id, userId });
 
         if (!quest) {
-            throw new AppError(404, 'Quest not found');
+            throw new AppError(404, 'Quest not found or unauthorized');
         }
     }
 
     /**
      * Get completed quests count
      */
-    async getCompletedCount() {
-        return await Quest.countDocuments({ isCompleted: true });
+    async getCompletedCount(userId) {
+        return await Quest.countDocuments({ userId, isCompleted: true });
     }
 
     /**
      * Start quest timer
      */
-    async startQuestTimer(id) {
-        const quest = await this.getQuestById(id);
+    async startQuestTimer(userId, id) {
+        const quest = await this.getQuestById(userId, id);
 
         if (quest.isCompleted) {
             throw new AppError(400, 'Cannot start timer on completed quest');
@@ -251,8 +253,8 @@ export class QuestService {
     /**
      * Pause quest timer
      */
-    async pauseQuestTimer(id) {
-        const quest = await this.getQuestById(id);
+    async pauseQuestTimer(userId, id) {
+        const quest = await this.getQuestById(userId, id);
 
         if (quest.timerState !== 'running') {
             throw new AppError(400, 'Timer is not running');
@@ -269,8 +271,8 @@ export class QuestService {
     /**
      * Resume quest timer
      */
-    async resumeQuestTimer(id) {
-        const quest = await this.getQuestById(id);
+    async resumeQuestTimer(userId, id) {
+        const quest = await this.getQuestById(userId, id);
 
         if (quest.timerState !== 'paused') {
             throw new AppError(400, 'Timer is not paused');
@@ -292,8 +294,8 @@ export class QuestService {
     /**
      * Stop quest timer (without completing)
      */
-    async stopQuestTimer(id, focusRating = null) {
-        const quest = await this.getQuestById(id);
+    async stopQuestTimer(userId, id, focusRating = null) {
+        const quest = await this.getQuestById(userId, id);
 
         if (quest.timerState === 'not_started' || quest.timerState === 'completed') {
             throw new AppError(400, 'Timer is not active');
@@ -331,16 +333,16 @@ export class QuestService {
     /**
      * Complete quest with timer data
      */
-    async completeQuestWithTimer(id, focusRating = null) {
+    async completeQuestWithTimer(userId, id, focusRating = null) {
         // First stop the timer if running
-        const quest = await this.getQuestById(id);
+        const quest = await this.getQuestById(userId, id);
 
         if (quest.timerState === 'running' || quest.timerState === 'paused') {
-            await this.stopQuestTimer(id, focusRating);
+            await this.stopQuestTimer(userId, id, focusRating);
         }
 
         // Then complete the quest
-        return await this.completeQuest(id);
+        return await this.completeQuest(userId, id);
     }
 
     /**
@@ -377,11 +379,12 @@ export class QuestService {
     /**
      * Check and mark overdue quests
      */
-    async checkOverdueQuests() {
+    async checkOverdueQuests(userId) {
         const now = new Date();
 
         const result = await Quest.updateMany(
             {
+                userId,
                 isCompleted: false,
                 deadline: { $lt: now, $ne: null },
                 isOverdue: false
@@ -397,8 +400,9 @@ export class QuestService {
     /**
      * Get overdue quests
      */
-    async getOverdueQuests() {
+    async getOverdueQuests(userId) {
         return await Quest.find({
+            userId,
             isCompleted: false,
             isOverdue: true
         }).sort({ deadline: 1 });
@@ -407,11 +411,12 @@ export class QuestService {
     /**
      * Get quests due soon (within next 24 hours)
      */
-    async getDueSoonQuests() {
+    async getDueSoonQuests(userId) {
         const now = new Date();
         const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
         return await Quest.find({
+            userId,
             isCompleted: false,
             deadline: { $gte: now, $lte: tomorrow }
         }).sort({ deadline: 1 });
@@ -420,12 +425,12 @@ export class QuestService {
     /**
      * Internal: Generate daily quests from active templates
      */
-    async _generateDailyQuestsFromTemplates() {
+    async _generateDailyQuestsFromTemplates(userId) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         // Find active templates
-        const templates = await QuestTemplate.find({ isActive: true });
+        const templates = await QuestTemplate.find({ userId, isActive: true });
 
         let dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
         if (dayOfWeek === 0) dayOfWeek = 7; // Convert Sunday to 7 to match frontend (Mon=1...Sun=7)
@@ -469,6 +474,7 @@ export class QuestService {
             if (shouldGenerate) {
                 // Create quest from template
                 await Quest.create({
+                    userId,
                     title: template.title,
                     description: template.description || '',
                     statType: template.statType,

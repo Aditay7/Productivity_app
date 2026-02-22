@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import goalController from '../controllers/goal.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
 
 const router = Router();
+
+router.use(protect);
 
 router.get('/', goalController.getAllGoals.bind(goalController));
 router.get('/active', goalController.getActiveGoals.bind(goalController));

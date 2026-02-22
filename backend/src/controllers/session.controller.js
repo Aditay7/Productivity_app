@@ -6,7 +6,7 @@ export class SessionController {
      */
     async getQuestSessions(req, res, next) {
         try {
-            const sessions = await sessionService.getQuestSessions(req.params.questId);
+            const sessions = await sessionService.getQuestSessions(req.user.id, req.params.questId);
             res.json({
                 success: true,
                 data: sessions,
@@ -27,7 +27,7 @@ export class SessionController {
                 endDate: req.query.endDate,
             };
 
-            const stats = await sessionService.getSessionStats(filters);
+            const stats = await sessionService.getSessionStats(req.user.id, filters);
             res.json({
                 success: true,
                 data: stats,
@@ -43,7 +43,7 @@ export class SessionController {
     async createSession(req, res, next) {
         try {
             const { questId, ...sessionData } = req.body;
-            const session = await sessionService.createSession(questId, sessionData);
+            const session = await sessionService.createSession(req.user.id, questId, sessionData);
             res.status(201).json({
                 success: true,
                 data: session,

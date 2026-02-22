@@ -5,8 +5,9 @@ export class SessionService {
     /**
      * Create a new quest session
      */
-    async createSession(questId, sessionData) {
+    async createSession(userId, questId, sessionData) {
         const session = await QuestSession.create({
+            userId,
             questId,
             ...sessionData
         });
@@ -16,16 +17,16 @@ export class SessionService {
     /**
      * Get all sessions for a quest
      */
-    async getQuestSessions(questId) {
-        return await QuestSession.find({ questId })
+    async getQuestSessions(userId, questId) {
+        return await QuestSession.find({ questId, userId })
             .sort({ createdAt: -1 });
     }
 
     /**
      * Get session statistics
      */
-    async getSessionStats(filters = {}) {
-        const query = {};
+    async getSessionStats(userId, filters = {}) {
+        const query = { userId };
 
         if (filters.questId) {
             query.questId = filters.questId;
@@ -70,15 +71,15 @@ export class SessionService {
     /**
      * Update session
      */
-    async updateSession(sessionId, data) {
-        const session = await QuestSession.findByIdAndUpdate(
-            sessionId,
+    async updateSession(userId, sessionId, data) {
+        const session = await QuestSession.findOneAndUpdate(
+            { _id: sessionId, userId },
             data,
             { new: true }
         );
 
         if (!session) {
-            throw new AppError(404, 'Session not found');
+            throw new AppError(404, 'Session not found or unauthorized');
         }
 
         return session;
@@ -87,11 +88,11 @@ export class SessionService {
     /**
      * Delete session
      */
-    async deleteSession(sessionId) {
-        const session = await QuestSession.findByIdAndDelete(sessionId);
+    async deleteSession(userId, sessionId) {
+        const session = await QuestSession.findOneAndDelete({ _id: sessionId, userId });
 
         if (!session) {
-            throw new AppError(404, 'Session not found');
+            throw new AppError(404, 'Session not found or unauthorized');
         }
     }
 }

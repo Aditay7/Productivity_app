@@ -1,6 +1,6 @@
 class ApiConfig {
   // Backend API base URL (updated for physical device debugging on local network)
-  static const String baseUrl = 'http://192.168.6.199:3000/api';
+  static const String baseUrl = 'http://10.161.202.179:3000/api';
 
   // API Endpoints
   static const String playerEndpoint = '/player';

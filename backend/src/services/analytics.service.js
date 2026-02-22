@@ -6,17 +6,17 @@ export class AnalyticsService {
     /**
      * Get productivity dashboard data
      */
-    async getProductivityDashboard() {
-        const completedQuests = await Quest.find({ isCompleted: true }).sort({ dateCompleted: 1 });
-        const player = await Player.findOne();
+    async getProductivityDashboard(userId) {
+        const completedQuests = await Quest.find({ userId, isCompleted: true }).sort({ dateCompleted: 1 });
+        const player = await Player.findOne({ userId });
 
         return {
             bestCompletionTimes: await this.getBestCompletionTimes(completedQuests),
             productivityPatterns: await this.getProductivityPatterns(completedQuests),
             questsByDifficulty: await this.getQuestsByDifficulty(completedQuests),
             statBalance: await this.getStatBalance(player),
-            weeklyProgress: await this.getWeeklyProgress(),
-            monthlyProgress: await this.getMonthlyProgress()
+            weeklyProgress: await this.getWeeklyProgress(userId),
+            monthlyProgress: await this.getMonthlyProgress(userId)
         };
     }
 
@@ -25,7 +25,7 @@ export class AnalyticsService {
      */
     async getBestCompletionTimes(quests) {
         const hourCounts = new Array(24).fill(0);
-        
+
         quests.forEach(quest => {
             if (quest.completionTimeOfDay !== null) {
                 hourCounts[quest.completionTimeOfDay]++;
@@ -87,7 +87,7 @@ export class AnalyticsService {
             stats[diff] = {
                 completed: questsOfDifficulty.length,
                 totalTime: questsOfDifficulty.reduce((sum, q) => sum + q.timeMinutes, 0),
-                averageTime: questsOfDifficulty.length > 0 
+                averageTime: questsOfDifficulty.length > 0
                     ? Math.round(questsOfDifficulty.reduce((sum, q) => sum + q.timeMinutes, 0) / questsOfDifficulty.length)
                     : 0
             };
@@ -128,24 +128,23 @@ export class AnalyticsService {
     /**
      * Get weekly progress
      */
-    async getWeeklyProgress() {
+    async getWeeklyProgress(userId) {
         const weekStart = new Date();
         weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
         weekStart.setHours(0, 0, 0, 0);
 
-        const completedThisWeek = await Quest.countDocuments({
+        const questsThisWeek = await Quest.find({
+            userId,
             isCompleted: true,
             dateCompleted: { $gte: weekStart }
         });
 
-        const totalXpThisWeek = await Quest.aggregate([
-            { $match: { isCompleted: true, dateCompleted: { $gte: weekStart } } },
-            { $group: { _id: null, totalXp: { $sum: '$xpReward' } } }
-        ]);
+        const completedThisWeek = questsThisWeek.length;
+        const totalXpThisWeek = questsThisWeek.reduce((sum, q) => sum + (q.xpReward || 0), 0);
 
         return {
             questsCompleted: completedThisWeek,
-            xpEarned: totalXpThisWeek[0]?.totalXp || 0,
+            xpEarned: totalXpThisWeek,
             weekStart: weekStart.toISOString()
         };
     }
@@ -153,24 +152,23 @@ export class AnalyticsService {
     /**
      * Get monthly progress
      */
-    async getMonthlyProgress() {
+    async getMonthlyProgress(userId) {
         const monthStart = new Date();
         monthStart.setDate(1);
         monthStart.setHours(0, 0, 0, 0);
 
-        const completedThisMonth = await Quest.countDocuments({
+        const questsThisMonth = await Quest.find({
+            userId,
             isCompleted: true,
             dateCompleted: { $gte: monthStart }
         });
 
-        const totalXpThisMonth = await Quest.aggregate([
-            { $match: { isCompleted: true, dateCompleted: { $gte: monthStart } } },
-            { $group: { _id: null, totalXp: { $sum: '$xpReward' } } }
-        ]);
+        const completedThisMonth = questsThisMonth.length;
+        const totalXpThisMonth = questsThisMonth.reduce((sum, q) => sum + (q.xpReward || 0), 0);
 
         return {
             questsCompleted: completedThisMonth,
-            xpEarned: totalXpThisMonth[0]?.totalXp || 0,
+            xpEarned: totalXpThisMonth,
             monthStart: monthStart.toISOString()
         };
     }
@@ -178,9 +176,9 @@ export class AnalyticsService {
     /**
      * Get habit statistics
      */
-    async getHabitStats() {
-        const habits = await QuestTemplate.find({ isHabit: true });
-        
+    async getHabitStats(userId) {
+        const habits = await QuestTemplate.find({ userId, isHabit: true });
+
         const habitStats = habits.map(habit => {
             const completionRate = this._calculateHabitCompletionRate(habit);
             return {
@@ -199,20 +197,20 @@ export class AnalyticsService {
     /**
      * Update habit completion
      */
-    async updateHabitCompletion(templateId) {
-        const template = await QuestTemplate.findById(templateId);
+    async updateHabitCompletion(userId, templateId) {
+        const template = await QuestTemplate.findOne({ _id: templateId, userId });
         if (!template || !template.isHabit) {
-            throw new Error('Template is not a habit');
+            throw new Error('Template is not a habit or unauthorized');
         }
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         // Check if already completed today
-        const lastCompleted = template.habitLastCompletedDate 
-            ? new Date(template.habitLastCompletedDate) 
+        const lastCompleted = template.habitLastCompletedDate
+            ? new Date(template.habitLastCompletedDate)
             : null;
-        
+
         if (lastCompleted) {
             lastCompleted.setHours(0, 0, 0, 0);
             if (lastCompleted.getTime() === today.getTime()) {
@@ -223,7 +221,7 @@ export class AnalyticsService {
         // Update streak
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        
+
         if (lastCompleted && lastCompleted.getTime() === yesterday.getTime()) {
             template.habitStreak += 1;
         } else {
@@ -252,7 +250,7 @@ export class AnalyticsService {
         const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
         const variance = values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
         const stdDev = Math.sqrt(variance);
-        
+
         // Lower stdDev = better balance
         if (stdDev < 100) return 'Excellent';
         if (stdDev < 300) return 'Good';
@@ -268,10 +266,10 @@ export class AnalyticsService {
         const daysSinceCreation = Math.floor(
             (new Date() - habit.createdAt) / (1000 * 60 * 60 * 24)
         );
-        
+
         const expectedCompletions = Math.max(1, daysSinceCreation);
         const actualCompletions = habit.habitCompletionHistory.length;
-        
+
         return Math.min(100, Math.round((actualCompletions / expectedCompletions) * 100));
     }
 }

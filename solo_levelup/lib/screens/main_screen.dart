@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/quest_generator_service.dart';
+import '../data/repositories/quest_template_repository.dart';
+import '../data/repositories/quest_repository.dart';
+import '../providers/player_provider.dart';
+import '../providers/quest_provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'quests/quests_screen.dart';
 import 'quests/add_quest_screen.dart';
@@ -9,14 +15,14 @@ import 'templates/manage_templates_screen.dart';
 import 'goals/create_goal_screen.dart';
 import 'goals/goals_screen.dart';
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
@@ -25,6 +31,40 @@ class _MainScreenState extends State<MainScreen> {
     const ProductivityDashboardScreen(),
     const GoalsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Generate today's quests from templates on app startup,
+    // but only when the MainScreen mounts (meaning user is logged in).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _generateTodayQuests();
+    });
+  }
+
+  Future<void> _generateTodayQuests() async {
+    try {
+      final playerAsync = ref.read(playerProvider);
+      if (!playerAsync.hasValue) return;
+
+      final player = playerAsync.value!;
+      final generator = QuestGeneratorService(
+        QuestTemplateRepository(),
+        QuestRepository(),
+      );
+
+      await generator.generateTodayQuests(
+        currentStreak: player.currentStreak,
+        isShadowMode: player.isShadowMode,
+      );
+
+      // Refresh quest list
+      ref.invalidate(questProvider);
+    } catch (e) {
+      // Silently fail - don't disrupt app startup
+      debugPrint('Quest generation error: $e');
+    }
+  }
 
   void _openForgeSheet() {
     HapticFeedback.mediumImpact();

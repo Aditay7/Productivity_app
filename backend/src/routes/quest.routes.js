@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import questController from '../controllers/quest.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
 
 const router = Router();
+
+router.use(protect); // Secure all endpoints
 
 // Standard quest routes
 router.get('/', questController.getAllQuests.bind(questController));

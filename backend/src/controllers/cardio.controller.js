@@ -1,5 +1,4 @@
 import cardioAnalyticsService from '../services/cardio_analytics.service.js';
-import playerService from '../services/player.service.js';
 import DailyStepLog from '../models/DailyStepLog.js';
 import WorkoutSession from '../models/WorkoutSession.js';
 
@@ -10,8 +9,7 @@ import WorkoutSession from '../models/WorkoutSession.js';
  */
 export const syncDailyLogs = async (req, res) => {
     try {
-        const player = await playerService.getPlayer();
-        const userId = player._id;
+        const userId = req.user.id;
         const { logs } = req.body; // Array of { date, steps, caloriesBurned, distanceKm, activeMinutes, hourlyDistribution }
 
         if (!Array.isArray(logs)) {
@@ -58,8 +56,7 @@ export const syncDailyLogs = async (req, res) => {
  */
 export const getAnalyticsSummary = async (req, res) => {
     try {
-        const player = await playerService.getPlayer();
-        const userId = player._id;
+        const userId = req.user.id;
 
         // Run heavy aggregations in parallel
         const [heatmap, weeklyTrend, peakHour] = await Promise.all([
@@ -87,8 +84,7 @@ export const getAnalyticsSummary = async (req, res) => {
  */
 export const saveWorkout = async (req, res) => {
     try {
-        const player = await playerService.getPlayer();
-        const userId = player._id;
+        const userId = req.user.id;
 
         const { type, startTime, endTime, durationSeconds, steps, distanceKm, caloriesBurned, averagePaceKmH, routeCoords } = req.body;
 

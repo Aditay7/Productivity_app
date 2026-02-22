@@ -15,7 +15,7 @@ export class QuestController {
                 endDate: req.query.endDate,
             };
 
-            const quests = await questService.getAllQuests(filters);
+            const quests = await questService.getAllQuests(req.user.id, filters);
             res.json({
                 success: true,
                 data: quests,
@@ -28,9 +28,9 @@ export class QuestController {
     /**
      * GET /api/quests/today
      */
-    async getTodayQuests(_req, res, next) {
+    async getTodayQuests(req, res, next) {
         try {
-            const quests = await questService.getTodayQuests();
+            const quests = await questService.getTodayQuests(req.user.id);
             res.json({
                 success: true,
                 data: quests,
@@ -43,9 +43,9 @@ export class QuestController {
     /**
      * GET /api/quests/overdue
      */
-    async getOverdueQuests(_req, res, next) {
+    async getOverdueQuests(req, res, next) {
         try {
-            const quests = await questService.getOverdueQuests();
+            const quests = await questService.getOverdueQuests(req.user.id);
             res.json({
                 success: true,
                 data: quests,
@@ -58,9 +58,9 @@ export class QuestController {
     /**
      * GET /api/quests/due-soon
      */
-    async getDueSoonQuests(_req, res, next) {
+    async getDueSoonQuests(req, res, next) {
         try {
-            const quests = await questService.getDueSoonQuests();
+            const quests = await questService.getDueSoonQuests(req.user.id);
             res.json({
                 success: true,
                 data: quests,
@@ -75,7 +75,7 @@ export class QuestController {
      */
     async getQuestById(req, res, next) {
         try {
-            const quest = await questService.getQuestById(req.params.id);
+            const quest = await questService.getQuestById(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: quest,
@@ -90,7 +90,7 @@ export class QuestController {
      */
     async createQuest(req, res, next) {
         try {
-            const quest = await questService.createQuest(req.body);
+            const quest = await questService.createQuest(req.user.id, req.body);
             res.status(201).json({
                 success: true,
                 data: quest,
@@ -106,7 +106,7 @@ export class QuestController {
      */
     async updateQuest(req, res, next) {
         try {
-            const quest = await questService.updateQuest(req.params.id, req.body);
+            const quest = await questService.updateQuest(req.user.id, req.params.id, req.body);
             res.json({
                 success: true,
                 data: quest,
@@ -122,7 +122,7 @@ export class QuestController {
      */
     async completeQuest(req, res, next) {
         try {
-            const result = await questService.completeQuest(req.params.id);
+            const result = await questService.completeQuest(req.user.id, req.params.id);
 
             res.json({
                 success: true,
@@ -143,7 +143,7 @@ export class QuestController {
      */
     async completeQuestWithTimer(req, res, next) {
         try {
-            const result = await questService.completeQuestWithTimer(req.params.id, req.body.focusRating);
+            const result = await questService.completeQuestWithTimer(req.user.id, req.params.id, req.body.focusRating);
             res.json({
                 success: true,
                 data: result.quest,
@@ -163,7 +163,7 @@ export class QuestController {
      */
     async startTimer(req, res, next) {
         try {
-            const quest = await questService.startQuestTimer(req.params.id);
+            const quest = await questService.startQuestTimer(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: quest,
@@ -179,7 +179,7 @@ export class QuestController {
      */
     async pauseTimer(req, res, next) {
         try {
-            const quest = await questService.pauseQuestTimer(req.params.id);
+            const quest = await questService.pauseQuestTimer(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: quest,
@@ -195,7 +195,7 @@ export class QuestController {
      */
     async resumeTimer(req, res, next) {
         try {
-            const quest = await questService.resumeQuestTimer(req.params.id);
+            const quest = await questService.resumeQuestTimer(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: quest,
@@ -211,7 +211,7 @@ export class QuestController {
      */
     async stopTimer(req, res, next) {
         try {
-            const quest = await questService.stopQuestTimer(req.params.id, req.body.focusRating);
+            const quest = await questService.stopQuestTimer(req.user.id, req.params.id, req.body.focusRating);
             res.json({
                 success: true,
                 data: quest,
@@ -227,7 +227,7 @@ export class QuestController {
      */
     async deleteQuest(req, res, next) {
         try {
-            await questService.deleteQuest(req.params.id);
+            await questService.deleteQuest(req.user.id, req.params.id);
             res.json({
                 success: true,
                 message: 'Quest deleted successfully',

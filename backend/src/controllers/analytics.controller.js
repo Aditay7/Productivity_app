@@ -6,7 +6,7 @@ export class AnalyticsController {
      */
     async getProductivityDashboard(req, res, next) {
         try {
-            const dashboard = await analyticsService.getProductivityDashboard();
+            const dashboard = await analyticsService.getProductivityDashboard(req.user.id);
             res.json({
                 success: true,
                 data: dashboard,
@@ -21,7 +21,7 @@ export class AnalyticsController {
      */
     async getHabitStats(req, res, next) {
         try {
-            const habits = await analyticsService.getHabitStats();
+            const habits = await analyticsService.getHabitStats(req.user.id);
             res.json({
                 success: true,
                 data: habits,
@@ -36,7 +36,7 @@ export class AnalyticsController {
      */
     async completeHabit(req, res, next) {
         try {
-            const template = await analyticsService.updateHabitCompletion(req.params.templateId);
+            const template = await analyticsService.updateHabitCompletion(req.user.id, req.params.templateId);
             res.json({
                 success: true,
                 data: template,

@@ -7,7 +7,7 @@ export class TemplateController {
     async getAllTemplates(req, res, next) {
         try {
             const activeOnly = req.query.activeOnly === 'true';
-            const templates = await templateService.getAllTemplates(activeOnly);
+            const templates = await templateService.getAllTemplates(req.user.id, activeOnly);
             res.json({
                 success: true,
                 data: templates,
@@ -22,7 +22,7 @@ export class TemplateController {
      */
     async getTemplateById(req, res, next) {
         try {
-            const template = await templateService.getTemplateById(req.params.id);
+            const template = await templateService.getTemplateById(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: template,
@@ -37,7 +37,7 @@ export class TemplateController {
      */
     async createTemplate(req, res, next) {
         try {
-            const template = await templateService.createTemplate(req.body);
+            const template = await templateService.createTemplate(req.user.id, req.body);
             res.status(201).json({
                 success: true,
                 data: template,
@@ -53,7 +53,7 @@ export class TemplateController {
      */
     async updateTemplate(req, res, next) {
         try {
-            const template = await templateService.updateTemplate(req.params.id, req.body);
+            const template = await templateService.updateTemplate(req.user.id, req.params.id, req.body);
             res.json({
                 success: true,
                 data: template,
@@ -69,7 +69,7 @@ export class TemplateController {
      */
     async toggleTemplate(req, res, next) {
         try {
-            const template = await templateService.toggleTemplate(req.params.id);
+            const template = await templateService.toggleTemplate(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: template,
@@ -85,7 +85,7 @@ export class TemplateController {
      */
     async deleteTemplate(req, res, next) {
         try {
-            await templateService.deleteTemplate(req.params.id);
+            await templateService.deleteTemplate(req.user.id, req.params.id);
             res.json({
                 success: true,
                 message: 'Template deleted successfully',

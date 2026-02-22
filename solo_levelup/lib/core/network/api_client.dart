@@ -1,18 +1,27 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 
 class ApiClient {
   final http.Client _client = http.Client();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  Future<Map<String, String>> _getHeaders() async {
+    final headers = {'Content-Type': 'application/json'};
+    final token = await _storage.read(key: 'jwt');
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
 
   // GET request
   Future<Map<String, dynamic>> get(String endpoint) async {
     try {
+      final headers = await _getHeaders();
       final response = await _client
-          .get(
-            Uri.parse('${ApiConfig.baseUrl}$endpoint'),
-            headers: {'Content-Type': 'application/json'},
-          )
+          .get(Uri.parse('${ApiConfig.baseUrl}$endpoint'), headers: headers)
           .timeout(ApiConfig.timeout);
 
       return _handleResponse(response);
@@ -27,10 +36,11 @@ class ApiClient {
     Map<String, dynamic>? body,
   }) async {
     try {
+      final headers = await _getHeaders();
       final response = await _client
           .post(
             Uri.parse('${ApiConfig.baseUrl}$endpoint'),
-            headers: {'Content-Type': 'application/json'},
+            headers: headers,
             body: body != null ? jsonEncode(body) : null,
           )
           .timeout(ApiConfig.timeout);
@@ -47,10 +57,11 @@ class ApiClient {
     Map<String, dynamic>? body,
   }) async {
     try {
+      final headers = await _getHeaders();
       final response = await _client
           .put(
             Uri.parse('${ApiConfig.baseUrl}$endpoint'),
-            headers: {'Content-Type': 'application/json'},
+            headers: headers,
             body: body != null ? jsonEncode(body) : null,
           )
           .timeout(ApiConfig.timeout);
@@ -64,11 +75,9 @@ class ApiClient {
   // DELETE request
   Future<Map<String, dynamic>> delete(String endpoint) async {
     try {
+      final headers = await _getHeaders();
       final response = await _client
-          .delete(
-            Uri.parse('${ApiConfig.baseUrl}$endpoint'),
-            headers: {'Content-Type': 'application/json'},
-          )
+          .delete(Uri.parse('${ApiConfig.baseUrl}$endpoint'), headers: headers)
           .timeout(ApiConfig.timeout);
 
       return _handleResponse(response);
@@ -84,7 +93,7 @@ class ApiClient {
       return data;
     } else {
       final error = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(error['error'] ?? 'Request failed');
+      throw Exception(error['message'] ?? error['error'] ?? 'Request failed');
     }
   }
 
