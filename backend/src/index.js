@@ -10,6 +10,7 @@ import goalRoutes from './routes/goal.routes.js';
 import skillRoutes from './routes/skill.routes.js';
 import sessionRoutes from './routes/session.routes.js';
 import timerRoutes from './routes/timer.routes.js';
+import cardioRoutes from './routes/cardio.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 
 // Load environment variables
@@ -44,6 +45,7 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/timer', timerRoutes);
+app.use('/api/cardio', cardioRoutes);
 
 
 // Error handling

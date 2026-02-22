@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/goal_provider.dart';
 import '../../app/theme.dart';
 import 'create_goal_screen.dart';
-
+import '../timer/focus_dungeon_screen.dart';
 import '../cardio/cardio_screen.dart';
 import '../settings/settings_screen.dart';
 
@@ -869,6 +869,19 @@ class _AdvancedVerticalSidebar extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const CardioScreen()),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  _SidebarItem(
+                    icon: Icons.shield,
+                    label: 'Dungeon',
+                    color: Colors.purpleAccent,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FocusDungeonScreen(),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 28),

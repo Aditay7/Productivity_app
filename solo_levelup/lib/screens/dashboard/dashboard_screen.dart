@@ -8,7 +8,6 @@ import '../../core/constants/stat_types.dart';
 import '../../app/theme.dart';
 import '../../data/models/player.dart';
 import '../../widgets/dashboard/activity_heatmap_section.dart';
-import '../timer/focus_dungeon_screen.dart';
 
 // Solid card color used consistently across the dashboard
 const _kCard = Color(0xFF1A1630);
@@ -116,14 +115,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 ),
                 loading: () => const _LoadingBlock(height: 160),
                 error: (_, __) => const SizedBox(),
-              ),
-            ),
-
-            // ── Focus Dungeon Raid Banner ──────────────────────────────
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
-                child: _FocusDungeonBanner(),
               ),
             ),
 
@@ -1602,83 +1593,6 @@ class _SectionShimmer extends StatelessWidget {
       ),
       child: Center(
         child: Text(label, style: const TextStyle(color: Colors.white24)),
-      ),
-    );
-  }
-}
-
-class _FocusDungeonBanner extends StatelessWidget {
-  const _FocusDungeonBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const FocusDungeonScreen()),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withOpacity(0.15),
-              blurRadius: 20,
-              spreadRadius: -5,
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.shield,
-                color: Colors.redAccent,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'THE FOCUS DUNGEON',
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Enter raid & eliminate distractions',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.redAccent,
-              size: 16,
-            ),
-          ],
-        ),
       ),
     );
   }

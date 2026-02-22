@@ -288,54 +288,69 @@ class _ActivityHeatmapSectionState
       Duration(days: totalCells - 1 - (6 - daysSinceSunday)),
     );
 
-    // Month Label Generation Logic
-    int prevMonth = -1;
+    // Removed old sizing code
+
+    // 1. Group columns by month
+    final List<_MonthSpan> monthSpans = [];
+    int currentMonth = -1;
+    int currentMonthStartCol = 0;
 
     for (int colIndex = 0; colIndex < columnsToShow; colIndex++) {
-      // Look at the date for Wednesday (mid-week) to determine the month for this column
+      // Use Wednesday to determine the column's month
       final cellDate = startDate.add(
         Duration(days: (colIndex * daysInWeek) + 3),
       );
       final month = cellDate.month;
 
-      if (month != prevMonth) {
-        // Position it explicitly.
-        // 16 padding + Y-Axis width (approx 30) + column indices (~16 pixels per column)
-        // But wrapped in a row, we'll build it differently: we'll create a row of columns,
-        // each column being either a label or empty space depending on the change.
-        prevMonth = month;
+      if (currentMonth == -1) {
+        currentMonth = month;
+        currentMonthStartCol = colIndex;
+      } else if (month != currentMonth) {
+        monthSpans.add(
+          _MonthSpan(
+            monthName: DateFormat('MMM').format(
+              startDate.add(
+                Duration(days: (currentMonthStartCol * daysInWeek) + 3),
+              ),
+            ),
+            colCount: colIndex - currentMonthStartCol,
+          ),
+        );
+        currentMonth = month;
+        currentMonthStartCol = colIndex;
       }
+    }
+    // Add the final month span
+    if (currentMonth != -1) {
+      monthSpans.add(
+        _MonthSpan(
+          monthName: DateFormat('MMM').format(
+            startDate.add(
+              Duration(days: (currentMonthStartCol * daysInWeek) + 3),
+            ),
+          ),
+          colCount: columnsToShow - currentMonthStartCol,
+        ),
+      );
     }
 
     // Build the month labels row
     List<Widget> builtMonthLabels = [];
-    prevMonth = -1;
-    for (int colIndex = 0; colIndex < columnsToShow; colIndex++) {
-      final cellDate = startDate.add(
-        Duration(days: (colIndex * daysInWeek) + 3),
-      ); // Use mid-week
-      if (cellDate.month != prevMonth && colIndex > 0) {
-        // Month changed, display abbreviated month
-        builtMonthLabels.add(
-          SizedBox(
-            width: 16, // Width of one cell + margin
-            child: Text(
-              DateFormat('MMM').format(cellDate),
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.4),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
+    for (var span in monthSpans) {
+      // Cell width is 12 + margin right 4 = 16 pixels per column
+      builtMonthLabels.add(
+        SizedBox(
+          width: span.colCount * 16.0,
+          child: Text(
+            span.colCount >= 2 ? span.monthName : '', // Hide if too squeezed
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.4),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        );
-        prevMonth = cellDate.month;
-      } else {
-        // For columns where month didn't change (or column 0 which might clip early), just space.
-        // We use unrendered space except when a month transition happens.
-        builtMonthLabels.add(const SizedBox(width: 16));
-        if (colIndex == 0) prevMonth = cellDate.month; // initialize
-      }
+        ),
+      );
     }
 
     return SingleChildScrollView(
@@ -686,4 +701,11 @@ class _StatCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MonthSpan {
+  final String monthName;
+  final int colCount;
+
+  _MonthSpan({required this.monthName, required this.colCount});
 }

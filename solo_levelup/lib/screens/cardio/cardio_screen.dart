@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../providers/step_provider.dart';
+import 'package:confetti/confetti.dart';
+import 'workout_screen.dart';
 
 class CardioScreen extends ConsumerStatefulWidget {
   const CardioScreen({super.key});
@@ -11,13 +13,25 @@ class CardioScreen extends ConsumerStatefulWidget {
 }
 
 class _CardioScreenState extends ConsumerState<CardioScreen> {
+  late ConfettiController _confettiController;
+  bool _hasCelebrated = false;
+
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
     // Initialize step tracking when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(stepProvider.notifier).initialize();
     });
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   @override
@@ -27,36 +41,106 @@ class _CardioScreenState extends ConsumerState<CardioScreen> {
     final double calories = stepState.steps * 0.04; // Very rough estimate
     final double distanceKm = stepState.steps * 0.0008; // Average stride length
 
+    // Trigger celebration only once per threshold crossing
+    if (progress >= 1.0 && !_hasCelebrated) {
+      _hasCelebrated = true;
+      _confettiController.play();
+    } else if (progress < 1.0) {
+      _hasCelebrated = false;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF16152B),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const WorkoutScreen()),
+          );
+        },
+        backgroundColor: AppTheme.primaryPurple,
+        icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+        label: const Text(
+          'START WORKOUT',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 32),
+        child: Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 32),
 
-              if (stepState.error != null) _buildErrorBanner(stepState.error!),
+                  if (stepState.error != null)
+                    _buildErrorBanner(stepState.error!),
 
-              _buildMainProgress(
-                stepState.steps,
-                stepState.dailyGoal,
-                progress,
+                  _buildMainProgress(
+                    stepState.steps,
+                    stepState.dailyGoal,
+                    progress,
+                  ),
+                  const SizedBox(height: 32),
+                  _buildStatsRow(
+                    calories.toStringAsFixed(1),
+                    distanceKm.toStringAsFixed(2),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildStatusIndicator(stepState.status),
+                ],
               ),
-              const SizedBox(height: 32),
-              _buildStatsRow(
-                calories.toStringAsFixed(1),
-                distanceKm.toStringAsFixed(2),
-              ),
-              const SizedBox(height: 32),
-              _buildStatusIndicator(stepState.status),
-            ],
-          ),
+            ),
+            // Confetti Overlay
+            ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                AppTheme.primaryPurple,
+              ],
+              createParticlePath: drawStar,
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  /// A custom Path to paint stars.
+  Path drawStar(Size size) {
+    // Method to convert degree to radians
+    double degToRad(double deg) => deg * (3.1415926535897932 / 180.0);
+
+    const numberOfPoints = 5;
+    final halfWidth = size.width / 2;
+    final externalRadius = halfWidth;
+    final internalRadius = halfWidth / 2.5;
+    final degreesPerStep = degToRad(360 / numberOfPoints);
+    final path = Path();
+    final fullAngle = degToRad(360);
+    path.moveTo(size.width, halfWidth);
+
+    for (double step = 0; step < fullAngle; step += degreesPerStep) {
+      path.lineTo(
+        halfWidth + externalRadius * 1.05 * 0.9,
+        halfWidth + externalRadius * 1.05 * 0.9,
+      );
+      path.lineTo(
+        halfWidth + internalRadius * 1.05 * 0.9,
+        halfWidth + internalRadius * 1.05 * 0.9,
+      );
+    }
+    path.close();
+    return path;
   }
 
   Widget _buildHeader() {
@@ -127,65 +211,93 @@ class _CardioScreenState extends ConsumerState<CardioScreen> {
   }
 
   Widget _buildMainProgress(int steps, int goal, double progress) {
+    final clampedProgress = progress > 1 ? 1.0 : progress;
+    final isDone = progress >= 1;
+
+    // Shift from Purple -> Gold as they approach goal
+    final activeColor = isDone
+        ? Colors.greenAccent
+        : Color.lerp(
+                AppTheme.primaryPurple,
+                Colors.orangeAccent,
+                clampedProgress,
+              ) ??
+              AppTheme.primaryPurple;
+
     return Center(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Background Glow
-          Container(
-            width: 260,
-            height: 260,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryPurple.withOpacity(0.15),
-                  blurRadius: 40,
-                  spreadRadius: 10,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 240,
-            height: 240,
-            child: CircularProgressIndicator(
-              value: progress > 1 ? 1 : progress,
-              strokeWidth: 16,
-              backgroundColor: Colors.white.withOpacity(0.05),
-              valueColor: const AlwaysStoppedAnimation(AppTheme.primaryPurple),
-              strokeCap: StrokeCap.round,
-            ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: clampedProgress),
+        duration: const Duration(milliseconds: 1200),
+        curve: Curves.easeOutCubic,
+        builder: (context, animValue, child) {
+          final displaySteps = (animValue * goal).round().clamp(0, steps);
+
+          return Stack(
+            alignment: Alignment.center,
             children: [
-              const Icon(
-                Icons.local_fire_department_rounded,
-                color: AppTheme.gold,
-                size: 32,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                steps.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -2,
+              // Dynamic Glowing Aura
+              Container(
+                width: 260,
+                height: 260,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: activeColor.withValues(alpha: isDone ? 0.3 : 0.15),
+                      blurRadius: isDone ? 60 : 40,
+                      spreadRadius: isDone ? 15 : 10,
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                ' / $goal steps',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+
+              // Animated Circular Ring
+              SizedBox(
+                width: 240,
+                height: 240,
+                child: CircularProgressIndicator(
+                  value: animValue,
+                  strokeWidth: 16,
+                  backgroundColor: Colors.white.withValues(alpha: 0.05),
+                  valueColor: AlwaysStoppedAnimation(activeColor),
+                  strokeCap: StrokeCap.round,
                 ),
+              ),
+
+              // Animated Text & Icon
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isDone
+                        ? Icons.military_tech_rounded
+                        : Icons.local_fire_department_rounded,
+                    color: isDone ? Colors.greenAccent : AppTheme.gold,
+                    size: 38,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    displaySteps.toString(),
+                    style: TextStyle(
+                      color: isDone ? Colors.greenAccent : Colors.white,
+                      fontSize: 48,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -2,
+                    ),
+                  ),
+                  Text(
+                    ' / $goal steps',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

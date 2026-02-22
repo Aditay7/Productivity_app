@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'cardio_sync_service.dart';
 
 class StepTrackerService {
   StreamSubscription<StepCount>? _stepCountStream;
@@ -11,6 +13,7 @@ class StepTrackerService {
 
   // Trackers
   int _todaySteps = 0;
+  Map<String, int> _hourlySteps = {};
   String _status = 'stopped';
   bool _isListening = false;
   String? _error;
@@ -19,6 +22,7 @@ class StepTrackerService {
   static const String _kLastRawStepCount = 'cardio_last_raw_step_count';
   static const String _kTodayAccumulatedSteps =
       'cardio_today_accumulated_steps';
+  static const String _kHourlySteps = 'cardio_hourly_steps';
   static const String _kLastSavedDate = 'cardio_last_saved_date';
 
   // Callbacks
@@ -83,6 +87,9 @@ class StepTrackerService {
       );
 
       _isListening = true;
+
+      // Immediately attempt to sync any old backlog queued when offline
+      cardioSyncService.pushSyncQueue();
     } catch (e) {
       _error = 'Error starting pedometer stream: $e';
       onError(_error!);
@@ -96,11 +103,24 @@ class StepTrackerService {
     if (lastSavedDate != todayStr) {
       // New day
       _todaySteps = 0;
+      _hourlySteps = {};
       await _prefs?.setString(_kLastSavedDate, todayStr);
       await _prefs?.setInt(_kTodayAccumulatedSteps, 0);
+      await _prefs?.setString(_kHourlySteps, jsonEncode(_hourlySteps));
     } else {
       // Load today's accumulated steps
       _todaySteps = _prefs?.getInt(_kTodayAccumulatedSteps) ?? 0;
+      final hourlyStr = _prefs?.getString(_kHourlySteps);
+      if (hourlyStr != null) {
+        try {
+          final decoded = jsonDecode(hourlyStr) as Map<String, dynamic>;
+          _hourlySteps = decoded.map(
+            (key, value) => MapEntry(key, value as int),
+          );
+        } catch (_) {
+          _hourlySteps = {};
+        }
+      }
     }
 
     onStepCount(_todaySteps);
@@ -120,8 +140,10 @@ class StepTrackerService {
 
     if (lastSavedDate != todayStr) {
       _todaySteps = 0;
+      _hourlySteps = {};
       await _prefs?.setString(_kLastSavedDate, todayStr);
       await _prefs?.setInt(_kTodayAccumulatedSteps, 0);
+      await _prefs?.setString(_kHourlySteps, jsonEncode(_hourlySteps));
     }
 
     int currentRaw = event.steps;
@@ -137,6 +159,26 @@ class StepTrackerService {
     if (delta > 0) {
       _todaySteps += delta;
       await _prefs?.setInt(_kTodayAccumulatedSteps, _todaySteps);
+
+      // Track hourly bucket
+      final currentHour = DateTime.now().hour.toString().padLeft(2, '0');
+      _hourlySteps[currentHour] = (_hourlySteps[currentHour] ?? 0) + delta;
+      await _prefs?.setString(_kHourlySteps, jsonEncode(_hourlySteps));
+
+      // Add to offline sync queue (Estimated ~0.04 cals and ~0.0008 km per step)
+      await cardioSyncService.queueDailyLog(
+        dateStr: todayStr,
+        steps: _todaySteps,
+        hourlyDistribution: _hourlySteps,
+        caloriesBurned: _todaySteps * 0.04,
+        distanceKm: _todaySteps * 0.0008,
+      );
+
+      // Attempt background push if we've accumulated > 10 steps since last push attempt
+      // (A real production app would use flutter_workmanager for this)
+      if (_todaySteps % 20 == 0) {
+        cardioSyncService.pushSyncQueue();
+      }
     }
 
     await _prefs?.setInt(_kLastRawStepCount, currentRaw);
@@ -166,4 +208,9 @@ class StepTrackerService {
     _pedestrianStatusStream?.cancel();
     _isListening = false;
   }
+
+  // Exposed for the sync service
+  Map<String, int> get hourlySteps => _hourlySteps;
+  int get todaySteps => _todaySteps;
+  String get todayDateStr => _getTodayStr();
 }
