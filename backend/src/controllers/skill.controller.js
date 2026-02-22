@@ -6,7 +6,7 @@ export class SkillController {
      */
     async getAllSkills(req, res, next) {
         try {
-            const skills = await skillService.getAllSkills();
+            const skills = await skillService.getAllSkills(req.user.id);
             res.json({
                 success: true,
                 data: skills
@@ -21,7 +21,7 @@ export class SkillController {
      */
     async getSkillByName(req, res, next) {
         try {
-            const skill = await skillService.getSkillByName(req.params.name);
+            const skill = await skillService.getSkillByName(req.user.id, req.params.name);
             res.json({
                 success: true,
                 data: skill
@@ -36,7 +36,7 @@ export class SkillController {
      */
     async initializeSkills(req, res, next) {
         try {
-            const skills = await skillService.initializeSkills();
+            const skills = await skillService.initializeSkills(req.user.id);
             res.json({
                 success: true,
                 data: skills,
@@ -52,7 +52,7 @@ export class SkillController {
      */
     async getAllPerks(req, res, next) {
         try {
-            const perks = await skillService.getAllPerks();
+            const perks = await skillService.getAllPerks(req.user.id);
             res.json({
                 success: true,
                 data: perks
@@ -67,7 +67,7 @@ export class SkillController {
      */
     async getUnlockedPerks(req, res, next) {
         try {
-            const perks = await skillService.getUnlockedPerks();
+            const perks = await skillService.getUnlockedPerks(req.user.id);
             res.json({
                 success: true,
                 data: perks
@@ -82,7 +82,7 @@ export class SkillController {
      */
     async getPerksBySkill(req, res, next) {
         try {
-            const perks = await skillService.getPerksBySkill(req.params.skillName);
+            const perks = await skillService.getPerksBySkill(req.user.id, req.params.skillName);
             res.json({
                 success: true,
                 data: perks
@@ -97,7 +97,7 @@ export class SkillController {
      */
     async initializePerks(req, res, next) {
         try {
-            const perks = await skillService.initializePerks();
+            const perks = await skillService.initializePerks(req.user.id);
             res.json({
                 success: true,
                 data: perks,

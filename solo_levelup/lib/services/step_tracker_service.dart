@@ -24,6 +24,7 @@ class StepTrackerService {
       'cardio_today_accumulated_steps';
   static const String _kHourlySteps = 'cardio_hourly_steps';
   static const String _kLastSavedDate = 'cardio_last_saved_date';
+  static const String _kDailyGoal = 'cardio_daily_goal';
 
   // Callbacks
   final Function(int) onStepCount;
@@ -207,6 +208,14 @@ class StepTrackerService {
     _stepCountStream?.cancel();
     _pedestrianStatusStream?.cancel();
     _isListening = false;
+  }
+
+  Future<void> saveDailyGoal(int goal) async {
+    await _prefs?.setInt(_kDailyGoal, goal);
+  }
+
+  int getSavedDailyGoal() {
+    return _prefs?.getInt(_kDailyGoal) ?? 8000;
   }
 
   // Exposed for the sync service

@@ -5,11 +5,12 @@ export class PlayerService {
     /**
      * Get player or create if doesn't exist
      */
-    async getPlayer() {
-        let player = await Player.findOne();
+    async getPlayer(userId) {
+        let player = await Player.findOne({ userId });
 
         if (!player) {
             player = await Player.create({
+                userId,
                 level: 1,
                 totalXp: 0,
                 strength: 0,
@@ -27,8 +28,8 @@ export class PlayerService {
     /**
      * Update player stats
      */
-    async updatePlayer(data) {
-        const player = await this.getPlayer();
+    async updatePlayer(userId, data) {
+        const player = await this.getPlayer(userId);
         Object.assign(player, data);
         player.updatedAt = new Date();
         await player.save();
@@ -38,8 +39,8 @@ export class PlayerService {
     /**
      * Add XP to player and update stats
      */
-    async addXP(xp, statType) {
-        const player = await this.getPlayer();
+    async addXP(userId, xp, statType) {
+        const player = await this.getPlayer(userId);
 
         // Calculate new streak
         const newStreak = calculateStreak(player.lastActivityDate, player.currentStreak);
@@ -62,8 +63,8 @@ export class PlayerService {
     /**
      * Toggle Shadow Mode
      */
-    async toggleShadowMode(enable) {
-        const player = await this.getPlayer();
+    async toggleShadowMode(userId, enable) {
+        const player = await this.getPlayer(userId);
         player.isShadowMode = enable;
         player.shadowModeActivatedAt = enable ? new Date() : null;
         await player.save();
@@ -73,9 +74,10 @@ export class PlayerService {
     /**
      * Reset player (for testing)
      */
-    async resetPlayer() {
-        await Player.deleteMany({});
+    async resetPlayer(userId) {
+        await Player.deleteMany({ userId });
         return await Player.create({
+            userId,
             level: 1,
             totalXp: 0,
             strength: 0,

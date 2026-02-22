@@ -4,7 +4,7 @@ export class TimerController {
 
     async startTimer(req, res, next) {
         try {
-            const session = await timerService.startTimer(req.body);
+            const session = await timerService.startTimer(req.user.id, req.body);
             res.status(201).json({
                 success: true,
                 data: session,
@@ -17,7 +17,7 @@ export class TimerController {
 
     async completeTimer(req, res, next) {
         try {
-            const session = await timerService.completeTimer(req.params.id);
+            const session = await timerService.completeTimer(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: session,
@@ -30,7 +30,7 @@ export class TimerController {
 
     async failTimer(req, res, next) {
         try {
-            const session = await timerService.failTimer(req.params.id);
+            const session = await timerService.failTimer(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: session,
@@ -43,7 +43,7 @@ export class TimerController {
 
     async getHistory(req, res, next) {
         try {
-            const history = await timerService.getHistory();
+            const history = await timerService.getHistory(req.user.id);
             res.json({
                 success: true,
                 data: history
@@ -55,7 +55,7 @@ export class TimerController {
 
     async getActiveSession(req, res, next) {
         try {
-            const session = await timerService.getActiveSession();
+            const session = await timerService.getActiveSession(req.user.id);
             res.json({
                 success: true,
                 data: session

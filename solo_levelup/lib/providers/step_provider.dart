@@ -50,9 +50,14 @@ class StepStateNotifier extends StateNotifier<StepState> {
   Future<void> initialize() async {
     state = state.copyWith(status: 'initializing...');
     await _service.initPlatformState();
+
+    // Load custom goal
+    final savedGoal = _service.getSavedDailyGoal();
+    state = state.copyWith(dailyGoal: savedGoal);
   }
 
-  void updateGoal(int newGoal) {
+  Future<void> updateGoal(int newGoal) async {
+    await _service.saveDailyGoal(newGoal);
     state = state.copyWith(dailyGoal: newGoal);
   }
 

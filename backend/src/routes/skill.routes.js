@@ -1,7 +1,10 @@
 import express from 'express';
 import skillController from '../controllers/skill.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
+
+router.use(protect); // Secure all skill endpoints
 
 // Skill routes
 router.get('/', skillController.getAllSkills);

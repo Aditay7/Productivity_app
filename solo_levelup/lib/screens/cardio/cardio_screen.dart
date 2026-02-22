@@ -15,6 +15,7 @@ class CardioScreen extends ConsumerStatefulWidget {
 class _CardioScreenState extends ConsumerState<CardioScreen> {
   late ConfettiController _confettiController;
   bool _hasCelebrated = false;
+  final TextEditingController _goalController = TextEditingController();
 
   @override
   void initState() {
@@ -31,7 +32,88 @@ class _CardioScreenState extends ConsumerState<CardioScreen> {
   @override
   void dispose() {
     _confettiController.dispose();
+    _goalController.dispose();
     super.dispose();
+  }
+
+  void _showEditGoalDialog(int currentGoal) {
+    _goalController.text = currentGoal.toString();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E1D36),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+            ),
+          ),
+          title: const Text(
+            'Edit Daily Goal',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: TextField(
+            controller: _goalController,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
+            decoration: InputDecoration(
+              suffixText: 'steps',
+              suffixStyle: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+              enabledBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppTheme.primaryPurple),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.greenAccent, width: 2),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white60),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                final newGoal = int.tryParse(_goalController.text);
+                if (newGoal != null && newGoal > 0) {
+                  ref.read(stepProvider.notifier).updateGoal(newGoal);
+
+                  // Reset celebration state if new goal is higher than current progress
+                  final state = ref.read(stepProvider);
+                  if (state.steps < newGoal) {
+                    setState(() {
+                      _hasCelebrated = false;
+                    });
+                  }
+                }
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Save',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -285,12 +367,39 @@ class _CardioScreenState extends ConsumerState<CardioScreen> {
                       letterSpacing: -2,
                     ),
                   ),
-                  Text(
-                    ' / $goal steps',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: () => _showEditGoalDialog(goal),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Goal: $goal',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.edit_rounded,
+                            color: Colors.white.withValues(alpha: 0.5),
+                            size: 14,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

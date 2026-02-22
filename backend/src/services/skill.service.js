@@ -6,56 +6,31 @@ export class SkillService {
     /**
      * Initialize default skills for a new player
      */
-    async initializeSkills() {
+    async initializeSkills(userId) {
         const defaultSkills = [
-            {
-                name: 'Coding',
-                description: 'Programming and technical skills',
-                icon: '💻',
-                color: '#3498DB'
-            },
-            {
-                name: 'Fitness',
-                description: 'Physical health and exercise',
-                icon: '💪',
-                color: '#E74C3C'
-            },
-            {
-                name: 'Communication',
-                description: 'Social skills and networking',
-                icon: '✨',
-                color: '#E91E63'
-            },
-            {
-                name: 'Discipline',
-                description: 'Consistency and habit building',
-                icon: '🎯',
-                color: '#9B59B6'
-            },
-            {
-                name: 'Learning',
-                description: 'Knowledge acquisition and growth',
-                icon: '🧠',
-                color: '#F39C12'
-            }
+            { name: 'Coding', description: 'Programming and technical skills', icon: '💻', color: '#3498DB' },
+            { name: 'Fitness', description: 'Physical health and exercise', icon: '💪', color: '#E74C3C' },
+            { name: 'Communication', description: 'Social skills and networking', icon: '✨', color: '#E91E63' },
+            { name: 'Discipline', description: 'Consistency and habit building', icon: '🎯', color: '#9B59B6' },
+            { name: 'Learning', description: 'Knowledge acquisition and growth', icon: '🧠', color: '#F39C12' }
         ];
 
-        const skills = await Skill.insertMany(defaultSkills);
-        return skills;
+        const skillsToInsert = defaultSkills.map(s => ({ ...s, userId }));
+        return await Skill.insertMany(skillsToInsert);
     }
 
     /**
      * Get all skills
      */
-    async getAllSkills() {
-        return await Skill.find().sort({ name: 1 });
+    async getAllSkills(userId) {
+        return await Skill.find({ userId }).sort({ name: 1 });
     }
 
     /**
      * Get skill by name
      */
-    async getSkillByName(name) {
-        const skill = await Skill.findOne({ name });
+    async getSkillByName(userId, name) {
+        const skill = await Skill.findOne({ userId, name });
 
         if (!skill) {
             throw new AppError(404, `Skill ${name} not found`);
@@ -67,8 +42,8 @@ export class SkillService {
     /**
      * Add XP to a skill
      */
-    async addSkillXP(skillName, xpAmount) {
-        const skill = await this.getSkillByName(skillName);
+    async addSkillXP(userId, skillName, xpAmount) {
+        const skill = await this.getSkillByName(userId, skillName);
 
         const oldLevel = skill.currentLevel;
         skill.totalXp += xpAmount;
@@ -79,10 +54,9 @@ export class SkillService {
         const newLevel = skill.currentLevel;
         const leveledUp = newLevel > oldLevel;
 
-        // Check for perk unlocks if leveled up
         let newPerks = [];
         if (leveledUp) {
-            newPerks = await this.checkPerkUnlocks(skillName, newLevel);
+            newPerks = await this.checkPerkUnlocks(userId, skillName, newLevel);
         }
 
         return {
@@ -97,8 +71,9 @@ export class SkillService {
     /**
      * Check and unlock perks when leveling up
      */
-    async checkPerkUnlocks(skillName, newLevel) {
+    async checkPerkUnlocks(userId, skillName, newLevel) {
         const perks = await Perk.find({
+            userId,
             skillRequired: skillName,
             levelRequired: { $lte: newLevel },
             isUnlocked: false
@@ -119,57 +94,57 @@ export class SkillService {
     /**
      * Get all perks
      */
-    async getAllPerks() {
-        return await Perk.find().sort({ skillRequired: 1, levelRequired: 1 });
+    async getAllPerks(userId) {
+        return await Perk.find({ userId }).sort({ skillRequired: 1, levelRequired: 1 });
     }
 
     /**
      * Get perks by skill
      */
-    async getPerksBySkill(skillName) {
-        return await Perk.find({ skillRequired: skillName }).sort({ levelRequired: 1 });
+    async getPerksBySkill(userId, skillName) {
+        return await Perk.find({ userId, skillRequired: skillName }).sort({ levelRequired: 1 });
     }
 
     /**
      * Get unlocked perks
      */
-    async getUnlockedPerks() {
-        return await Perk.find({ isUnlocked: true }).sort({ unlockedAt: -1 });
+    async getUnlockedPerks(userId) {
+        return await Perk.find({ userId, isUnlocked: true }).sort({ unlockedAt: -1 });
     }
 
     /**
      * Initialize default perks
      */
-    async initializePerks() {
+    async initializePerks(userId) {
         const defaultPerks = [
             // Coding Perks
-            { name: 'Code Sprint', description: 'Unlock 2x XP for coding quests on weekends', skillRequired: 'Coding', levelRequired: 5, icon: '⚡', featureKey: 'code_sprint' },
-            { name: 'Deep Work Mode', description: 'Enable distraction-free coding sessions with Pomodoro timer', skillRequired: 'Coding', levelRequired: 10, icon: '🧘', featureKey: 'deep_work_mode' },
-            { name: 'Mentor Mode', description: 'Unlock ability to create coding challenges for others', skillRequired: 'Coding', levelRequired: 15, icon: '👨‍🏫', featureKey: 'mentor_mode' },
+            { name: 'Code Sprint', description: 'Unlock 2x XP for coding quests', skillRequired: 'Coding', levelRequired: 5, icon: '⚡', featureKey: 'code_sprint' },
+            { name: 'Deep Work Mode', description: 'Enable distraction-free coding', skillRequired: 'Coding', levelRequired: 10, icon: '🧘', featureKey: 'deep_work_mode' },
+            { name: 'Mentor Mode', description: 'Create coding challenges for others', skillRequired: 'Coding', levelRequired: 15, icon: '👨‍🏫', featureKey: 'mentor_mode' },
 
             // Fitness Perks
-            { name: 'Iron Will', description: 'Unlock streak protection (1 missed day won\'t break streak)', skillRequired: 'Fitness', levelRequired: 5, icon: '🛡️', featureKey: 'iron_will' },
-            { name: 'Beast Mode', description: 'Unlock 2x difficulty quests with 3x rewards', skillRequired: 'Fitness', levelRequired: 10, icon: '🦁', featureKey: 'beast_mode' },
-            { name: 'Recovery Master', description: 'Unlock rest day scheduling without penalty', skillRequired: 'Fitness', levelRequired: 15, icon: '😴', featureKey: 'recovery_master' },
+            { name: 'Iron Will', description: 'Unlock streak protection', skillRequired: 'Fitness', levelRequired: 5, icon: '🛡️', featureKey: 'iron_will' },
+            { name: 'Beast Mode', description: '2x difficulty with 3x rewards', skillRequired: 'Fitness', levelRequired: 10, icon: '🦁', featureKey: 'beast_mode' },
+            { name: 'Recovery Master', description: 'Rest day without penalty', skillRequired: 'Fitness', levelRequired: 15, icon: '😴', featureKey: 'recovery_master' },
 
             // Communication Perks
-            { name: 'Networker', description: 'Unlock social quest templates', skillRequired: 'Communication', levelRequired: 5, icon: '🤝', featureKey: 'networker' },
-            { name: 'Influencer', description: 'Unlock quest sharing and leaderboards', skillRequired: 'Communication', levelRequired: 10, icon: '📢', featureKey: 'influencer' },
-            { name: 'Mentor', description: 'Unlock ability to guide other players', skillRequired: 'Communication', levelRequired: 15, icon: '🌟', featureKey: 'mentor' },
+            { name: 'Networker', description: 'Social quest templates', skillRequired: 'Communication', levelRequired: 5, icon: '🤝', featureKey: 'networker' },
+            { name: 'Influencer', description: 'Quest sharing leaderboards', skillRequired: 'Communication', levelRequired: 10, icon: '📢', featureKey: 'influencer' },
+            { name: 'Mentor', description: 'Guide other players', skillRequired: 'Communication', levelRequired: 15, icon: '🌟', featureKey: 'mentor' },
 
             // Discipline Perks
-            { name: 'Hard Mode', description: 'Unlock penalty system for failed quests', skillRequired: 'Discipline', levelRequired: 5, icon: '⚔️', featureKey: 'hard_mode' },
-            { name: 'Consistency King', description: 'Unlock weekly quest chains with bonus rewards', skillRequired: 'Discipline', levelRequired: 10, icon: '👑', featureKey: 'consistency_king' },
-            { name: 'Shadow Mode', description: 'Unlock stealth mode (hidden from leaderboards)', skillRequired: 'Discipline', levelRequired: 15, icon: '🥷', featureKey: 'shadow_mode' },
+            { name: 'Hard Mode', description: 'Penalty system for failed quests', skillRequired: 'Discipline', levelRequired: 5, icon: '⚔️', featureKey: 'hard_mode' },
+            { name: 'Consistency King', description: 'Weekly quest chains bonus rewards', skillRequired: 'Discipline', levelRequired: 10, icon: '👑', featureKey: 'consistency_king' },
+            { name: 'Shadow Mode', description: 'Hidden from leaderboards', skillRequired: 'Discipline', levelRequired: 15, icon: '🥷', featureKey: 'shadow_mode' },
 
             // Learning Perks
-            { name: 'Quick Learner', description: 'Unlock XP bonus for completing quests early', skillRequired: 'Learning', levelRequired: 5, icon: '⏱️', featureKey: 'quick_learner' },
-            { name: 'Knowledge Base', description: 'Unlock quest notes and reflection journal', skillRequired: 'Learning', levelRequired: 10, icon: '📚', featureKey: 'knowledge_base' },
-            { name: 'Master Teacher', description: 'Unlock ability to create custom quest templates', skillRequired: 'Learning', levelRequired: 15, icon: '🎓', featureKey: 'master_teacher' }
+            { name: 'Quick Learner', description: 'XP bonus completing quests early', skillRequired: 'Learning', levelRequired: 5, icon: '⏱️', featureKey: 'quick_learner' },
+            { name: 'Knowledge Base', description: 'Quest notes and reflection journal', skillRequired: 'Learning', levelRequired: 10, icon: '📚', featureKey: 'knowledge_base' },
+            { name: 'Master Teacher', description: 'Create custom quest templates', skillRequired: 'Learning', levelRequired: 15, icon: '🎓', featureKey: 'master_teacher' }
         ];
 
-        const perks = await Perk.insertMany(defaultPerks);
-        return perks;
+        const perksToInsert = defaultPerks.map(p => ({ ...p, userId }));
+        return await Perk.insertMany(perksToInsert);
     }
 }
 

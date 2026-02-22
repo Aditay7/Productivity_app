@@ -4,9 +4,9 @@ export class PlayerController {
     /**
      * GET /api/player
      */
-    async getPlayer(_req, res, next) {
+    async getPlayer(req, res, next) {
         try {
-            const player = await playerService.getPlayer();
+            const player = await playerService.getPlayer(req.user.id);
             res.json({
                 success: true,
                 data: player,
@@ -21,7 +21,7 @@ export class PlayerController {
      */
     async updatePlayer(req, res, next) {
         try {
-            const player = await playerService.updatePlayer(req.body);
+            const player = await playerService.updatePlayer(req.user.id, req.body);
             res.json({
                 success: true,
                 data: player,
@@ -37,7 +37,7 @@ export class PlayerController {
     async addXP(req, res, next) {
         try {
             const { xp, statType } = req.body;
-            const player = await playerService.addXP(xp, statType);
+            const player = await playerService.addXP(req.user.id, xp, statType);
             res.json({
                 success: true,
                 data: player,
@@ -54,7 +54,7 @@ export class PlayerController {
     async toggleShadowMode(req, res, next) {
         try {
             const { enable } = req.body;
-            const player = await playerService.toggleShadowMode(enable);
+            const player = await playerService.toggleShadowMode(req.user.id, enable);
             res.json({
                 success: true,
                 data: player,
@@ -68,9 +68,9 @@ export class PlayerController {
     /**
      * POST /api/player/reset
      */
-    async resetPlayer(_req, res, next) {
+    async resetPlayer(req, res, next) {
         try {
-            const player = await playerService.resetPlayer();
+            const player = await playerService.resetPlayer(req.user.id);
             res.json({
                 success: true,
                 data: player,

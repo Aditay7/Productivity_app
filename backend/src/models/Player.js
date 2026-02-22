@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const playerSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     level: { type: Number, default: 1 },
     totalXp: { type: Number, default: 0 },
     strength: { type: Number, default: 0 },
