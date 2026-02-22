@@ -1,6 +1,7 @@
 class ApiConfig {
-  // Backend API base URL (updated for physical device debugging on local network)
-  static const String baseUrl = 'http://10.161.202.179:3000/api';
+  // Backend API base URL
+  static const String baseUrl =
+      'https://productivity-app-ht2f.onrender.com/api';
 
   // API Endpoints
   static const String playerEndpoint = '/player';

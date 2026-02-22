@@ -40,7 +40,13 @@ class Player {
   });
 
   /// Get player name (default: "Shadow Monarch" or "Hunter")
-  String get name => isShadowMode ? 'Shadow Monarch' : 'Hunter';
+  String getName([String? username]) {
+    final prefix = isShadowMode ? 'Shadow Monarch' : 'Hunter';
+    if (username != null && username.isNotEmpty) {
+      return '$prefix $username';
+    }
+    return prefix;
+  }
 
   /// Get current XP progress in current level
   int get xp {

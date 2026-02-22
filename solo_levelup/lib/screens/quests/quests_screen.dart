@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quest_provider.dart';
@@ -130,7 +129,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('$e'.replaceAll('Exception: ', '')),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -403,7 +402,14 @@ class _ActiveTab extends ConsumerWidget {
           children: [
             const Icon(Icons.error_outline, color: Colors.red, size: 48),
             const SizedBox(height: 12),
-            Text('$e', style: const TextStyle(color: Colors.white54)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Text(
+                '$e'.replaceAll('Exception: ', ''),
+                style: const TextStyle(color: Colors.white54),
+                textAlign: TextAlign.center,
+              ),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.invalidate(questProvider),
@@ -734,7 +740,6 @@ class _DoneQuestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statColor = quest.statType.color as Color;
     final diff = _difficultyFromQuest(quest);
 
     return GestureDetector(

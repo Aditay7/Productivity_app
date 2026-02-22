@@ -16,7 +16,8 @@ class GoalRepository {
       final queryParams = <String, String>{};
       if (type != null) queryParams['type'] = type.value;
       if (statType != null) queryParams['statType'] = statType;
-      if (isCompleted != null) queryParams['isCompleted'] = isCompleted.toString();
+      if (isCompleted != null)
+        queryParams['isCompleted'] = isCompleted.toString();
 
       final queryString = queryParams.isNotEmpty
           ? '?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}'
@@ -35,6 +36,19 @@ class GoalRepository {
 
       return [];
     } catch (e) {
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('invalid id format')) {
+        // Backend returns this when looking up by a yet-to-be-properly-initialized user ObjectId
+        return [];
+      } else if (errorString.contains('socketexception') ||
+          errorString.contains('clientexception') ||
+          errorString.contains('failed host lookup') ||
+          errorString.contains('connection refused') ||
+          errorString.contains('timeout')) {
+        throw Exception(
+          'No internet connection. Please check your network and try again.',
+        );
+      }
       throw Exception('Error getting goals: $e');
     }
   }
@@ -55,6 +69,18 @@ class GoalRepository {
 
       return [];
     } catch (e) {
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('invalid id format')) {
+        return [];
+      } else if (errorString.contains('socketexception') ||
+          errorString.contains('clientexception') ||
+          errorString.contains('failed host lookup') ||
+          errorString.contains('connection refused') ||
+          errorString.contains('timeout')) {
+        throw Exception(
+          'No internet connection. Please check your network and try again.',
+        );
+      }
       throw Exception('Error getting active goals: $e');
     }
   }
@@ -62,9 +88,7 @@ class GoalRepository {
   /// Get goal by ID
   Future<Goal?> getGoal(String id) async {
     try {
-      final response = await _apiClient.get(
-        '${ApiConfig.goalsEndpoint}/$id',
-      );
+      final response = await _apiClient.get('${ApiConfig.goalsEndpoint}/$id');
 
       if (response['success'] == true && response['data'] != null) {
         return Goal.fromMap(response['data'] as Map<String, dynamic>);

@@ -50,6 +50,18 @@ class QuestRepository {
 
       return [];
     } catch (e) {
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('invalid id format')) {
+        return [];
+      } else if (errorString.contains('socketexception') ||
+          errorString.contains('clientexception') ||
+          errorString.contains('failed host lookup') ||
+          errorString.contains('connection refused') ||
+          errorString.contains('timeout')) {
+        throw Exception(
+          'No internet connection. Please check your network and try again.',
+        );
+      }
       throw Exception('Error getting quests: $e');
     }
   }

@@ -99,9 +99,15 @@ class GoalsScreen extends ConsumerWidget {
                             color: Colors.red,
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            '$e',
-                            style: const TextStyle(color: Colors.white54),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            child: Text(
+                              '$e'.replaceAll('Exception: ', ''),
+                              style: const TextStyle(color: Colors.white54),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(

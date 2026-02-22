@@ -9,6 +9,9 @@ import '../../core/constants/stat_types.dart';
 import '../../app/theme.dart';
 import '../../data/models/player.dart';
 import '../../widgets/dashboard/activity_heatmap_section.dart';
+import '../../providers/profile_provider.dart';
+import '../profile/profile_screen.dart';
+import 'dart:io';
 
 // Solid card color used consistently across the dashboard
 const _kCard = Color(0xFF1A1630);
@@ -209,26 +212,57 @@ class _HeroHeader extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Avatar circle
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryPurple.withOpacity(0.25),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppTheme.gold.withOpacity(0.5),
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            player.name[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: AppTheme.gold,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryPurple.withOpacity(0.25),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppTheme.gold.withOpacity(0.5),
+                              width: 2,
                             ),
                           ),
+                          child:
+                              ref.watch(profileProvider).profilePicPath != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(25),
+                                  child: Image.file(
+                                    File(
+                                      ref
+                                          .watch(profileProvider)
+                                          .profilePicPath!,
+                                    ),
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(
+                                    player
+                                        .getName(
+                                          ref.watch(profileProvider).name ??
+                                              ref
+                                                  .watch(authProvider)
+                                                  .user
+                                                  ?.username,
+                                        )[0]
+                                        .toUpperCase(),
+                                    style: const TextStyle(
+                                      color: AppTheme.gold,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -249,7 +283,10 @@ class _HeroHeader extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              player.name,
+                              player.getName(
+                                ref.watch(profileProvider).name ??
+                                    ref.watch(authProvider).user?.username,
+                              ),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -327,28 +364,6 @@ class _HeroHeader extends ConsumerWidget {
                                   ),
                                 ),
                               ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          InkWell(
-                            onTap: () async {
-                              // Perform logout and invalidate caches
-                              await ref.read(authProvider.notifier).logout();
-                              ref.invalidate(playerProvider);
-                              ref.invalidate(questProvider);
-                              ref.invalidate(goalProvider);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(6.0),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.logout,
-                                color: Colors.white54,
-                                size: 18,
-                              ),
                             ),
                           ),
                         ],
