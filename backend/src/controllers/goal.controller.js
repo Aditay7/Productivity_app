@@ -9,10 +9,10 @@ export class GoalController {
             const filters = {
                 type: req.query.type,
                 statType: req.query.statType,
-                isCompleted: req.query.isCompleted === 'true' ? true : 
-                            req.query.isCompleted === 'false' ? false : undefined
+                isCompleted: req.query.isCompleted === 'true' ? true :
+                    req.query.isCompleted === 'false' ? false : undefined
             };
-            const goals = await goalService.getAllGoals(filters);
+            const goals = await goalService.getAllGoals(req.user.id, filters);
             res.json({
                 success: true,
                 data: goals,
@@ -27,7 +27,7 @@ export class GoalController {
      */
     async getActiveGoals(req, res, next) {
         try {
-            const goals = await goalService.getActiveGoals();
+            const goals = await goalService.getActiveGoals(req.user.id);
             res.json({
                 success: true,
                 data: goals,
@@ -42,7 +42,7 @@ export class GoalController {
      */
     async getGoalById(req, res, next) {
         try {
-            const goal = await goalService.getGoalById(req.params.id);
+            const goal = await goalService.getGoalById(req.user.id, req.params.id);
             res.json({
                 success: true,
                 data: goal,
@@ -57,7 +57,7 @@ export class GoalController {
      */
     async createGoal(req, res, next) {
         try {
-            const goal = await goalService.createGoal(req.body);
+            const goal = await goalService.createGoal(req.user.id, req.body);
             res.status(201).json({
                 success: true,
                 data: goal,
@@ -73,7 +73,7 @@ export class GoalController {
      */
     async updateGoal(req, res, next) {
         try {
-            const goal = await goalService.updateGoal(req.params.id, req.body);
+            const goal = await goalService.updateGoal(req.user.id, req.params.id, req.body);
             res.json({
                 success: true,
                 data: goal,
@@ -90,7 +90,7 @@ export class GoalController {
     async updateProgress(req, res, next) {
         try {
             const { value } = req.body;
-            const goal = await goalService.updateGoalProgress(req.params.id, value);
+            const goal = await goalService.updateGoalProgress(req.user.id, req.params.id, value);
             res.json({
                 success: true,
                 data: goal,
@@ -106,7 +106,7 @@ export class GoalController {
      */
     async deleteGoal(req, res, next) {
         try {
-            await goalService.deleteGoal(req.params.id);
+            await goalService.deleteGoal(req.user.id, req.params.id);
             res.json({
                 success: true,
                 message: 'Goal deleted successfully',

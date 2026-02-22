@@ -31,4 +31,15 @@ playerSchema.pre('save', function (next) {
     next();
 });
 
+// Transform _id to id when converting to JSON
+playerSchema.set('toJSON', {
+    virtuals: true,
+    transform: (doc, ret) => {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+    }
+});
+
 export const Player = mongoose.model('Player', playerSchema);

@@ -457,7 +457,7 @@ export class QuestService {
                 if (template.weekdays && template.weekdays.includes(dayOfWeek)) {
                     shouldGenerate = true;
                 }
-            } else if (template.recurrenceType === 'interval') {
+            } else if (template.recurrenceType === 'interval' || template.recurrenceType === 'custom') {
                 // Check if enough days have passed
                 if (template.lastGeneratedDate) {
                     const lastGen = new Date(template.lastGeneratedDate);

@@ -41,4 +41,15 @@ const questSchema = new mongoose.Schema({
     isTemplateInstance: { type: Boolean, default: false }
 });
 
+// Transform _id to id when converting to JSON
+questSchema.set('toJSON', {
+    virtuals: true,
+    transform: (doc, ret) => {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+    }
+});
+
 export const Quest = mongoose.model('Quest', questSchema);

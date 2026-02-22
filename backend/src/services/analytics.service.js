@@ -86,9 +86,9 @@ export class AnalyticsService {
             const questsOfDifficulty = quests.filter(q => q.difficulty === diff);
             stats[diff] = {
                 completed: questsOfDifficulty.length,
-                totalTime: questsOfDifficulty.reduce((sum, q) => sum + q.timeMinutes, 0),
+                totalTime: questsOfDifficulty.reduce((sum, q) => sum + (q.timeEstimatedMinutes || 0), 0),
                 averageTime: questsOfDifficulty.length > 0
-                    ? Math.round(questsOfDifficulty.reduce((sum, q) => sum + q.timeMinutes, 0) / questsOfDifficulty.length)
+                    ? Math.round(questsOfDifficulty.reduce((sum, q) => sum + (q.timeEstimatedMinutes || 0), 0) / questsOfDifficulty.length)
                     : 0
             };
         });
