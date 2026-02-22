@@ -15,7 +15,8 @@ class CreateTemplateScreen extends ConsumerStatefulWidget {
   const CreateTemplateScreen({super.key, this.template});
 
   @override
-  ConsumerState<CreateTemplateScreen> createState() => _CreateTemplateScreenState();
+  ConsumerState<CreateTemplateScreen> createState() =>
+      _CreateTemplateScreenState();
 }
 
 class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
@@ -64,7 +65,9 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.template == null ? 'Create Template' : 'Edit Template'),
+        title: Text(
+          widget.template == null ? 'Create Template' : 'Edit Template',
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
@@ -98,30 +101,22 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
   }
 
   Widget _buildTitleField() {
-    return TextFormField(
+    return _buildPremiumTextField(
       controller: _titleController,
-      decoration: const InputDecoration(
-        labelText: 'Quest Title',
-        hintText: 'e.g., Morning Meditation',
-        prefixIcon: Icon(Icons.title),
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter a title';
-        }
-        return null;
-      },
+      label: 'Template Title',
+      hintText: 'e.g., Morning Meditation',
+      icon: Icons.title,
+      validator: (value) =>
+          value == null || value.trim().isEmpty ? 'Please enter a title' : null,
     );
   }
 
   Widget _buildDescriptionField() {
-    return TextFormField(
+    return _buildPremiumTextField(
       controller: _descriptionController,
-      decoration: const InputDecoration(
-        labelText: 'Description (Optional)',
-        hintText: 'Add details about this quest...',
-        prefixIcon: Icon(Icons.description),
-      ),
+      label: 'Description (Optional)',
+      hintText: 'Add details about this template...',
+      icon: Icons.description,
       maxLines: 3,
     );
   }
@@ -130,21 +125,119 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Time: $_timeMinutes minutes',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        Slider(
-          value: _timeMinutes.toDouble(),
-          min: 5,
-          max: 180,
-          divisions: 35,
-          label: '$_timeMinutes min',
-          onChanged: (value) {
-            setState(() {
-              _timeMinutes = value.round();
-            });
-          },
+        _buildSectionHeader('Time Investment', Icons.schedule),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(
+                      () => _timeMinutes = (_timeMinutes - 5).clamp(5, 999),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.remove,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        '$_timeMinutes',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.gold,
+                        ),
+                      ),
+                      const Text(
+                        'MINUTES',
+                        style: TextStyle(
+                          fontSize: 10,
+                          letterSpacing: 1,
+                          color: Colors.white54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(
+                      () => _timeMinutes = (_timeMinutes + 5).clamp(5, 999),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryPurple.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: AppTheme.primaryPurple,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [15, 30, 45, 60].map((mins) {
+                  return InkWell(
+                    onTap: () => setState(() => _timeMinutes = mins),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _timeMinutes == mins
+                            ? AppTheme.primaryPurple.withOpacity(0.2)
+                            : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _timeMinutes == mins
+                              ? AppTheme.primaryPurple
+                              : Colors.transparent,
+                        ),
+                      ),
+                      child: Text(
+                        '$mins m',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _timeMinutes == mins
+                              ? Colors.white
+                              : Colors.white54,
+                          fontWeight: _timeMinutes == mins
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -154,26 +247,42 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Difficulty',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        Row(
+        _buildSectionHeader('Difficulty', Icons.local_fire_department_outlined),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: Difficulty.values.map((diff) {
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ChoiceChip(
-                  label: Text(diff.displayName),
-                  selected: _difficulty == diff,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() {
-                        _difficulty = diff;
-                      });
-                    }
-                  },
+            final isSelected = _difficulty == diff;
+            return GestureDetector(
+              onTap: () => setState(() => _difficulty = diff),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryPurple.withOpacity(0.15)
+                      : AppTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.primaryPurple.withOpacity(0.8)
+                        : Colors.white12,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Text(
+                  diff.displayName,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppTheme.primaryPurple.withOpacity(0.9)
+                        : Colors.white70,
+                  ),
                 ),
               ),
             );
@@ -187,32 +296,52 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Stat Type',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
+        _buildSectionHeader('Category', Icons.category_outlined),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: StatType.values.map((stat) {
-            return ChoiceChip(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(stat.emoji),
-                  const SizedBox(width: 4),
-                  Text(stat.name.toUpperCase()),
-                ],
+            final isSelected = _statType == stat;
+            final color = Color(stat.colorValue);
+            return GestureDetector(
+              onTap: () => setState(() => _statType = stat),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? color.withOpacity(0.15)
+                      : AppTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? color.withOpacity(0.8) : Colors.white12,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(stat.emoji, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 8),
+                    Text(
+                      stat.name.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? color.withOpacity(0.9)
+                            : Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              selected: _statType == stat,
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() {
-                    _statType = stat;
-                  });
-                }
-              },
             );
           }).toList(),
         ),
@@ -224,33 +353,74 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recurrence',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        Column(
-          children: RecurrenceType.values.map((type) {
-            return RadioListTile<RecurrenceType>(
-              title: Row(
-                children: [
-                  Text(type.emoji, style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 8),
-                  Text(type.displayName),
-                ],
-              ),
-              subtitle: Text(type.description),
-              value: type,
-              groupValue: _recurrenceType,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _recurrenceType = value;
-                  });
-                }
-              },
-            );
-          }).toList(),
+        _buildSectionHeader('Recurrence', Icons.repeat),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Column(
+            children: RecurrenceType.values.map((type) {
+              final isSelected = _recurrenceType == type;
+              return InkWell(
+                onTap: () => setState(() => _recurrenceType = type),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.primaryPurple.withOpacity(0.1)
+                        : Colors.transparent,
+                    border: Border(
+                      bottom: type != RecurrenceType.values.last
+                          ? const BorderSide(color: Colors.white12)
+                          : BorderSide.none,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(type.emoji, style: const TextStyle(fontSize: 20)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              type.displayName,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? AppTheme.primaryPurple
+                                    : Colors.white,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              type.description,
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_circle,
+                          color: AppTheme.primaryPurple,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
@@ -261,33 +431,38 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
       case RecurrenceType.weekly:
         return WeekdayPicker(
           selectedDays: _weekdays,
-          onChanged: (days) {
-            setState(() {
-              _weekdays = days;
-            });
-          },
+          onChanged: (days) => setState(() => _weekdays = days),
         );
       case RecurrenceType.custom:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Repeat every $_customDays ${_customDays == 1 ? 'day' : 'days'}',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            Slider(
-              value: _customDays.toDouble(),
-              min: 1,
-              max: 30,
-              divisions: 29,
-              label: '$_customDays days',
-              onChanged: (value) {
-                setState(() {
-                  _customDays = value.round();
-                });
-              },
-            ),
-          ],
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Repeat every $_customDays ${_customDays == 1 ? 'day' : 'days'}',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Slider(
+                value: _customDays.toDouble(),
+                min: 1,
+                max: 30,
+                divisions: 29,
+                activeColor: AppTheme.primaryPurple,
+                onChanged: (value) =>
+                    setState(() => _customDays = value.round()),
+              ),
+            ],
+          ),
         );
       default:
         return const SizedBox.shrink();
@@ -295,93 +470,75 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
   }
 
   Widget _buildHabitTrackingToggle() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.local_fire_department,
-                  color: Colors.orange,
-                  size: 28,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Habit Tracking',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Track streaks and get insights',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch(
-                  value: _isHabit,
-                  onChanged: (value) {
-                    setState(() {
-                      _isHabit = value;
-                    });
-                  },
-                ),
-              ],
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _isHabit ? Colors.orange.withOpacity(0.5) : Colors.white12,
+          width: _isHabit ? 1.5 : 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: IgnorePointer(
+          ignoring: false,
+          child: SwitchListTile(
+            value: _isHabit,
+            onChanged: (value) => setState(() => _isHabit = value),
+            activeColor: Colors.orange,
+            title: const Text(
+              'Habit Tracking',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-            if (_isHabit) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.orange, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'This quest will track your completion streak and show up in habit analytics',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            subtitle: Text(
+              'Track completion streaks and get habit insights.',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 12,
               ),
-            ],
-          ],
+            ),
+            secondary: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.local_fire_department,
+                color: Colors.orange,
+                size: 20,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSaveButton() {
-    return ElevatedButton(
-      onPressed: _saveTemplate,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.primaryPurple,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-      child: Text(
-        widget.template == null ? 'Create Template' : 'Update Template',
-        style: const TextStyle(fontSize: 16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: ElevatedButton(
+        onPressed: _saveTemplate,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryPurple,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shadowColor: AppTheme.primaryPurple.withOpacity(0.4),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          widget.template == null ? 'CREATE TEMPLATE' : 'UPDATE TEMPLATE',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.2,
+          ),
+        ),
       ),
     );
   }
@@ -426,13 +583,82 @@ class _CreateTemplateScreenState extends ConsumerState<CreateTemplateScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            widget.template == null
-                ? 'Template created!'
-                : 'Template updated!',
+            widget.template == null ? 'Template created!' : 'Template updated!',
           ),
           backgroundColor: AppTheme.primaryPurple,
         ),
       );
     }
+  }
+
+  Widget _buildPremiumTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData icon,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        labelText: label,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: Colors.white.withOpacity(0.3),
+          fontSize: 13,
+        ),
+        labelStyle: TextStyle(
+          color: Colors.white.withOpacity(0.5),
+          fontSize: 13,
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: AppTheme.primaryPurple,
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: AppTheme.primaryPurple, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Colors.black.withOpacity(0.2),
+        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white54, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

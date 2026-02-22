@@ -70,8 +70,8 @@ class TodayQuestsList extends ConsumerWidget {
           );
 
           return Container(
-            margin: EdgeInsets.only(bottom: responsive.spacing),
-            padding: EdgeInsets.all(responsive.spacing),
+            margin: EdgeInsets.only(bottom: responsive.spacing * 0.75),
+            padding: EdgeInsets.all(responsive.spacing * 0.75),
             decoration: BoxDecoration(
               gradient: AppTheme.cardGradient,
               borderRadius: BorderRadius.circular(12),
@@ -84,17 +84,17 @@ class TodayQuestsList extends ConsumerWidget {
               children: [
                 // Stat icon
                 Container(
-                  padding: EdgeInsets.all(responsive.spacing * 0.5),
+                  padding: EdgeInsets.all(responsive.spacing * 0.4),
                   decoration: BoxDecoration(
                     color: Color(quest.statType.colorValue).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     quest.statType.emoji,
-                    style: TextStyle(fontSize: responsive.isSmall ? 20 : 24),
+                    style: TextStyle(fontSize: responsive.isSmall ? 16 : 20),
                   ),
                 ),
-                SizedBox(width: responsive.spacing),
+                SizedBox(width: responsive.spacing * 0.75),
 
                 // Quest info
                 Expanded(
@@ -105,7 +105,7 @@ class TodayQuestsList extends ConsumerWidget {
                       Text(
                         quest.title,
                         style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontSize: responsive.isSmall ? 14 : 16),
+                            ?.copyWith(fontSize: responsive.isSmall ? 13 : 15),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
@@ -163,7 +163,7 @@ class TodayQuestsList extends ConsumerWidget {
                   onPressed: () => _completeQuest(context, ref, quest),
                   icon: const Icon(Icons.check_circle_outline),
                   color: AppTheme.gold,
-                  iconSize: responsive.isSmall ? 28 : 32,
+                  iconSize: responsive.isSmall ? 22 : 26,
                   padding: EdgeInsets.all(responsive.spacing * 0.5),
                   constraints: const BoxConstraints(),
                 ),

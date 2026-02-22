@@ -34,12 +34,10 @@ class AppTheme {
         primary: primaryPurple,
         secondary: gold,
         surface: cardBackground,
-        background: darkBackground,
         error: Colors.red,
         onPrimary: Colors.white,
         onSecondary: Colors.black,
         onSurface: Colors.white,
-        onBackground: Colors.white,
       ),
 
       // Scaffold

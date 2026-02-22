@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/timer_provider.dart';
@@ -138,52 +137,73 @@ class _FocusDungeonScreenState extends ConsumerState<FocusDungeonScreen>
             ),
           ),
           const SizedBox(height: 30),
-          ..._ranks.entries.map((e) {
-            final isSelected = _selectedRank == e.key;
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedRank = e.key;
-                  _selectedDuration = e.value;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.red.withOpacity(0.15)
-                      : Colors.white.withOpacity(0.03),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected ? Colors.redAccent : Colors.white12,
-                    width: isSelected ? 2 : 1,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 16,
+            children: _ranks.entries.map((e) {
+              final isSelected = _selectedRank == e.key;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedRank = e.key;
+                    _selectedDuration = e.value;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: (MediaQuery.of(context).size.width - 48 - 16) / 2,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.red.withOpacity(0.15)
+                        : Colors.white.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? Colors.redAccent : Colors.white12,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.redAccent.withOpacity(0.2),
+                              blurRadius: 15,
+                              spreadRadius: 2,
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${e.key}-RANK',
+                        style: TextStyle(
+                          color: isSelected ? Colors.redAccent : Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${e.value} MIN',
+                        style: TextStyle(
+                          color: isSelected
+                              ? Colors.redAccent.withOpacity(0.8)
+                              : Colors.white54,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Text(
-                      '${e.key}-RANK',
-                      style: TextStyle(
-                        color: isSelected ? Colors.redAccent : Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${e.value} MIN',
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
           const Spacer(),
           const Text(
             "WARNING: Leaving the app or locking your phone will fail the raid instantly. Abandon all distractions.",
@@ -231,18 +251,26 @@ class _FocusDungeonScreenState extends ConsumerState<FocusDungeonScreen>
       children: [
         // Boss Health Bar
         Container(
-          height: 12,
+          height: 8,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.2),
+            color: Colors.red.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(4),
             boxShadow: [
-              BoxShadow(color: Colors.red.withOpacity(0.4), blurRadius: 10),
+              BoxShadow(
+                color: Colors.red.withOpacity(0.3),
+                blurRadius: 8,
+                spreadRadius: 1,
+              ),
             ],
           ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: state.progress,
-            child: Container(color: Colors.redAccent),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: state.progress,
+              child: Container(color: Colors.redAccent),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -341,41 +369,73 @@ class _FocusDungeonScreenState extends ConsumerState<FocusDungeonScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.emoji_events, color: Colors.amber, size: 120),
-          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.amber.withOpacity(0.1),
+              border: Border.all(
+                color: Colors.amber.withOpacity(0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.amber.withOpacity(0.2),
+                  blurRadius: 30,
+                  spreadRadius: 10,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.emoji_events,
+              color: Colors.amber,
+              size: 80,
+            ),
+          ),
+          const SizedBox(height: 32),
           const Text(
             'BOSS DEFEATED',
             style: TextStyle(
               color: Colors.amber,
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: FontWeight.w900,
               letterSpacing: 4,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             '+$xp INT XP',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: () => ref.read(timerProvider.notifier).resetState(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber.withOpacity(0.2),
-              side: const BorderSide(color: Colors.amber),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-            ),
-            child: const Text(
-              'CLAIM LOOT',
-              style: TextStyle(
-                color: Colors.amber,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
+          const SizedBox(height: 48),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: () => ref.read(timerProvider.notifier).resetState(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.withOpacity(0.15),
+                foregroundColor: Colors.amber,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Colors.amber.withOpacity(0.5),
+                    width: 2,
+                  ),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'CLAIM LOOT',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
               ),
             ),
           ),
@@ -389,37 +449,69 @@ class _FocusDungeonScreenState extends ConsumerState<FocusDungeonScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.dangerous, color: Colors.red.withOpacity(0.5), size: 120),
-          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.redAccent.withOpacity(0.1),
+              border: Border.all(
+                color: Colors.redAccent.withOpacity(0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.redAccent.withOpacity(0.2),
+                  blurRadius: 30,
+                  spreadRadius: 10,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.dangerous,
+              color: Colors.redAccent,
+              size: 80,
+            ),
+          ),
+          const SizedBox(height: 32),
           const Text(
             'RAID FAILED',
             style: TextStyle(
               color: Colors.redAccent,
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: FontWeight.w900,
               letterSpacing: 4,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           const Text(
             'You succumbed to distraction.',
             style: TextStyle(color: Colors.white54, fontSize: 16),
           ),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: () => ref.read(timerProvider.notifier).resetState(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.withOpacity(0.1),
-              side: const BorderSide(color: Colors.redAccent),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-            ),
-            child: const Text(
-              'RESURRECT',
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
+          const SizedBox(height: 48),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: () => ref.read(timerProvider.notifier).resetState(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.withOpacity(0.15),
+                foregroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Colors.redAccent.withOpacity(0.5),
+                    width: 2,
+                  ),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'RESURRECT',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
               ),
             ),
           ),

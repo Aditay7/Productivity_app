@@ -16,8 +16,9 @@ class GoalRepository {
       final queryParams = <String, String>{};
       if (type != null) queryParams['type'] = type.value;
       if (statType != null) queryParams['statType'] = statType;
-      if (isCompleted != null)
+      if (isCompleted != null) {
         queryParams['isCompleted'] = isCompleted.toString();
+      }
 
       final queryString = queryParams.isNotEmpty
           ? '?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}'

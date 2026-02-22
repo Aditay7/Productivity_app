@@ -145,7 +145,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
       ),
@@ -207,7 +207,7 @@ class _HeroHeader extends ConsumerWidget {
               SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -222,8 +222,8 @@ class _HeroHeader extends ConsumerWidget {
                           );
                         },
                         child: Container(
-                          width: 50,
-                          height: 50,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: AppTheme.primaryPurple.withOpacity(0.25),
                             shape: BoxShape.circle,
@@ -235,7 +235,7 @@ class _HeroHeader extends ConsumerWidget {
                           child:
                               ref.watch(profileProvider).profilePicPath != null
                               ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(25),
+                                  borderRadius: BorderRadius.circular(20),
                                   child: Image.file(
                                     File(
                                       ref
@@ -259,13 +259,13 @@ class _HeroHeader extends ConsumerWidget {
                                     style: const TextStyle(
                                       color: AppTheme.gold,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 20,
+                                      fontSize: 16,
                                     ),
                                   ),
                                 ),
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: 12),
                       // Name + chips
                       Expanded(
                         child: Column(
@@ -276,7 +276,7 @@ class _HeroHeader extends ConsumerWidget {
                               greeting,
                               style: const TextStyle(
                                 color: Colors.white38,
-                                fontSize: 10,
+                                fontSize: 9,
                                 letterSpacing: 1.4,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -289,7 +289,7 @@ class _HeroHeader extends ConsumerWidget {
                               ),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -325,12 +325,12 @@ class _HeroHeader extends ConsumerWidget {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 14,
+                              horizontal: 10,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
                               color: AppTheme.gold.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: AppTheme.gold,
                                 width: 1.5,
@@ -359,7 +359,7 @@ class _HeroHeader extends ConsumerWidget {
                                   style: const TextStyle(
                                     color: Colors.black,
                                     fontWeight: FontWeight.w900,
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     height: 1.1,
                                   ),
                                 ),
@@ -495,108 +495,188 @@ class _XpRingSectionState extends State<_XpRingSection>
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // ── Circular XP ring ───────────────────────────────────────
-          AnimatedBuilder(
-            animation: _anim,
-            builder: (_, __) => SizedBox(
-              width: 140,
-              height: 140,
-              child: CustomPaint(
-                painter: _RingPainter(
-                  progress: _anim.value,
-                  ringColor: AppTheme.primaryPurple,
-                  trackColor: Colors.white.withOpacity(0.06),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'LVL',
-                        style: TextStyle(
-                          color: Colors.white38,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      Text(
-                        '${p.level}',
-                        style: const TextStyle(
-                          color: AppTheme.gold,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                          height: 1.0,
-                        ),
-                      ),
-                      Text(
-                        '$pct%',
-                        style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 340;
+          final widgets = [
+            // ── Circular XP ring ───────────────────────────────────────
+            AnimatedBuilder(
+              animation: _anim,
+              builder: (_, __) => SizedBox(
+                width: 110,
+                height: 110,
+                child: CustomPaint(
+                  painter: _RingPainter(
+                    progress: _anim.value,
+                    ringColor: AppTheme.primaryPurple,
+                    trackColor: Colors.white.withOpacity(0.06),
                   ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          // ── 2 × 2 bento stat tiles ────────────────────────────────
-          Expanded(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: bentoItems.map((item) {
-                return SizedBox(
-                  width:
-                      (MediaQuery.of(context).size.width - 32 - 140 - 14 - 8) /
-                      2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _kCard,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: item.$4.withOpacity(0.2)),
-                    ),
+                  child: Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(item.$1, color: item.$4, size: 18),
-                        const SizedBox(height: 6),
-                        Text(
-                          item.$2,
+                        const Text(
+                          'LVL',
                           style: TextStyle(
-                            color: item.$4,
-                            fontSize: 20,
+                            color: Colors.white38,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        Text(
+                          '${p.level}',
+                          style: const TextStyle(
+                            color: AppTheme.gold,
+                            fontSize: 28,
                             fontWeight: FontWeight.w900,
                             height: 1.0,
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
-                          item.$3,
+                          '$pct%',
                           style: const TextStyle(
                             color: Colors.white38,
                             fontSize: 10,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              }).toList(),
+                ),
+              ),
             ),
-          ),
-        ],
+            if (!isNarrow) const SizedBox(width: 14),
+            // ── 2 × 2 bento stat tiles ────────────────────────────────
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: isNarrow
+                    ? WrapAlignment.center
+                    : WrapAlignment.start,
+                children: bentoItems.map((item) {
+                  final itemWidth = isNarrow
+                      ? (constraints.maxWidth - 8) / 2
+                      : (constraints.maxWidth - 110 - 14 - 8) / 2;
+                  return SizedBox(
+                    width: itemWidth.clamp(60.0, 200.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _kCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: item.$4.withOpacity(0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(item.$1, color: item.$4, size: 16),
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              item.$2,
+                              style: TextStyle(
+                                color: item.$4,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            item.$3,
+                            style: const TextStyle(
+                              color: Colors.white38,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ];
+
+          if (isNarrow) {
+            return Column(
+              children:
+                  [
+                    widgets[0], // Ring
+                    const SizedBox(height: 16),
+                    widgets[2], // Bento items (Expanded isn't valid directly in Column without a fixed height, so we extract the Wrap)
+                  ]..replaceRange(1, 2, [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: bentoItems.map((item) {
+                        final itemWidth = (constraints.maxWidth - 8) / 2;
+                        return SizedBox(
+                          width: itemWidth.clamp(60.0, 200.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _kCard,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: item.$4.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(item.$1, color: item.$4, size: 18),
+                                const SizedBox(height: 6),
+                                FittedBox(
+                                  alignment: Alignment.centerLeft,
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    item.$2,
+                                    style: TextStyle(
+                                      color: item.$4,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.$3,
+                                  style: const TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ]),
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: widgets,
+          );
+        },
       ),
     );
   }

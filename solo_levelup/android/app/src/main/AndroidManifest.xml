@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     
     <application
-        android:label="solo_levelup"
+        android:label="The System"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

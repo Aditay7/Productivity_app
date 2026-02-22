@@ -56,8 +56,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     final prefs = await SharedPreferences.getInstance();
     if (name != null) await prefs.setString('profile_name', name);
     if (age != null) await prefs.setInt('profile_age', age);
-    if (profilePicPath != null)
+    if (profilePicPath != null) {
       await prefs.setString('profile_pic_path', profilePicPath);
+    }
 
     state = state.copyWith(
       name: name ?? state.name,

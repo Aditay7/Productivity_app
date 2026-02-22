@@ -15,7 +15,7 @@ class _SoloLevelUpAppState extends ConsumerState<SoloLevelUpApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Solo Level Up',
+      title: 'The System',
       theme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
       home: const AuthWrapper(),

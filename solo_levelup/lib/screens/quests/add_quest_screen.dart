@@ -90,68 +90,79 @@ class _AddQuestScreenState extends ConsumerState<AddQuestScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Title field
-                  TextFormField(
+                  _buildPremiumTextField(
                     controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Quest Title',
-                      hintText: 'e.g., Morning gym session',
-                      prefixIcon: Icon(Icons.title),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a title';
-                      }
-                      return null;
-                    },
+                    label: 'Quest Title',
+                    hintText: 'e.g., Deep Work Session',
+                    icon: Icons.title,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Please enter a title'
+                        : null,
                   ),
                   const SizedBox(height: 16),
 
                   // Description field
-                  TextFormField(
+                  _buildPremiumTextField(
                     controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description (Optional)',
-                      hintText: 'Optional notes...',
-                      prefixIcon: Icon(Icons.notes),
-                    ),
+                    label: 'Description (Optional)',
+                    hintText: 'Extra notes...',
+                    icon: Icons.notes,
                     maxLines: 3,
                   ),
                   const SizedBox(height: 24),
 
-                  // Stat Type Selection
-                  Text(
-                    'Stat Type',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  // Category/Stat Selection
+                  _buildSectionHeader('Category', Icons.category_outlined),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: StatType.values.map((statType) {
                       final isSelected = _selectedStatType == statType;
-                      return ChoiceChip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(statType.emoji),
-                            const SizedBox(width: 8),
-                            Text(statType.displayName),
-                          ],
-                        ),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedStatType = statType;
-                          });
-                        },
-                        selectedColor: Color(
-                          statType.colorValue,
-                        ).withOpacity(0.3),
-                        backgroundColor: AppTheme.cardBackground,
-                        side: BorderSide(
-                          color: isSelected
-                              ? Color(statType.colorValue)
-                              : Colors.white24,
+                      final color = Color(statType.colorValue);
+                      return GestureDetector(
+                        onTap: () =>
+                            setState(() => _selectedStatType = statType),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? color.withOpacity(0.15)
+                                : AppTheme.cardBackground,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? color.withOpacity(0.8)
+                                  : Colors.white12,
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                statType.emoji,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                statType.displayName,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? color.withOpacity(0.9)
+                                      : Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }).toList(),
@@ -159,20 +170,28 @@ class _AddQuestScreenState extends ConsumerState<AddQuestScreen> {
                   const SizedBox(height: 24),
 
                   // Difficulty Selection
-                  Text(
+                  _buildSectionHeader(
                     'Difficulty',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    Icons.local_fire_department_outlined,
                   ),
                   const SizedBox(height: 12),
                   if (isShadowMode)
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.purple.shade900, Colors.black],
+                          colors: [
+                            Colors.purple.shade900.withOpacity(0.5),
+                            Colors.black,
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.purple),
+                        border: Border.all(
+                          color: Colors.purple.withOpacity(0.5),
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -180,7 +199,8 @@ class _AddQuestScreenState extends ConsumerState<AddQuestScreen> {
                           const Text(
                             '⚔️ SHADOW MODE: ',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.white70,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -188,45 +208,50 @@ class _AddQuestScreenState extends ConsumerState<AddQuestScreen> {
                             'HARD ONLY',
                             style: TextStyle(
                               color: Colors.red.shade400,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
                             ),
                           ),
                         ],
                       ),
                     )
                   else
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: Difficulty.values.map((difficulty) {
                         final isSelected = _selectedDifficulty == difficulty;
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: ChoiceChip(
-                              label: Center(
-                                child: Text(
-                                  difficulty.displayName,
-                                  style: TextStyle(
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedDifficulty = difficulty;
-                                });
-                              },
-                              selectedColor: AppTheme.primaryPurple.withOpacity(
-                                0.3,
-                              ),
-                              backgroundColor: AppTheme.cardBackground,
-                              side: BorderSide(
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedDifficulty = difficulty),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppTheme.primaryPurple.withOpacity(0.15)
+                                  : AppTheme.cardBackground,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
                                 color: isSelected
-                                    ? AppTheme.primaryPurple
-                                    : Colors.white24,
+                                    ? AppTheme.primaryPurple.withOpacity(0.8)
+                                    : Colors.white12,
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Text(
+                              difficulty.displayName,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? AppTheme.primaryPurple.withOpacity(0.9)
+                                    : Colors.white70,
                               ),
                             ),
                           ),
@@ -236,90 +261,154 @@ class _AddQuestScreenState extends ConsumerState<AddQuestScreen> {
                   const SizedBox(height: 24),
 
                   // Time Investment
-                  Text(
-                    'Time Investment',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  _buildSectionHeader('Time Investment', Icons.schedule),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.cardGradient,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.primaryPurple.withOpacity(0.3),
-                      ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Column(
                       children: [
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _timeMinutes = (_timeMinutes - 5).clamp(5, 999);
-                            });
-                          },
-                          icon: const Icon(Icons.remove_circle_outline),
-                          color: AppTheme.gold,
-                        ),
-                        Column(
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '$_timeMinutes',
-                              style: Theme.of(context).textTheme.displaySmall,
+                            GestureDetector(
+                              onTap: () => setState(
+                                () => _timeMinutes = (_timeMinutes - 5).clamp(
+                                  5,
+                                  999,
+                                ),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.remove,
+                                  color: Colors.white70,
+                                  size: 20,
+                                ),
+                              ),
                             ),
-                            Text(
-                              'minutes',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.white54),
+                            Column(
+                              children: [
+                                Text(
+                                  '$_timeMinutes',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.gold,
+                                  ),
+                                ),
+                                const Text(
+                                  'MINUTES',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    letterSpacing: 1,
+                                    color: Colors.white54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            GestureDetector(
+                              onTap: () => setState(
+                                () => _timeMinutes = (_timeMinutes + 5).clamp(
+                                  5,
+                                  999,
+                                ),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryPurple.withOpacity(
+                                    0.2,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.add,
+                                  color: AppTheme.primaryPurple,
+                                  size: 20,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _timeMinutes = (_timeMinutes + 5).clamp(5, 999);
-                            });
-                          },
-                          icon: const Icon(Icons.add_circle_outline),
-                          color: AppTheme.gold,
+                        const SizedBox(height: 16),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [15, 30, 45, 60].map((mins) {
+                            return InkWell(
+                              onTap: () => setState(() => _timeMinutes = mins),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _timeMinutes == mins
+                                      ? AppTheme.primaryPurple.withOpacity(0.2)
+                                      : Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _timeMinutes == mins
+                                        ? AppTheme.primaryPurple
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                                child: Text(
+                                  '$mins m',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _timeMinutes == mins
+                                        ? Colors.white
+                                        : Colors.white54,
+                                    fontWeight: _timeMinutes == mins
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Quick time buttons
-                  Row(
-                    children: [15, 30, 60].map((minutes) {
-                      return Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _timeMinutes = minutes;
-                              });
-                            },
-                            child: Text('+$minutes min'),
-                          ),
-                        ),
-                      );
-                    }).toList(),
                   ),
                   const SizedBox(height: 24),
 
                   // XP Preview
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 20,
+                    ),
                     decoration: BoxDecoration(
-                      color: isShadowMode
-                          ? Colors.purple.shade900.withOpacity(0.3)
-                          : AppTheme.gold.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      gradient: LinearGradient(
+                        colors: isShadowMode
+                            ? [
+                                Colors.purple.shade900.withOpacity(0.4),
+                                Colors.black,
+                              ]
+                            : [AppTheme.gold.withOpacity(0.15), Colors.black],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isShadowMode
-                            ? Colors.purple
+                            ? Colors.purple.withOpacity(0.5)
                             : AppTheme.gold.withOpacity(0.3),
                       ),
                     ),
@@ -329,59 +418,93 @@ class _AddQuestScreenState extends ConsumerState<AddQuestScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'XP Reward',
-                              style: Theme.of(context).textTheme.titleMedium,
+                            const Text(
+                              'Expected Reward',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
+                              ),
                             ),
                             if (isShadowMode)
-                              Text(
-                                '⚔️ 3X SHADOW BONUS',
-                                style: TextStyle(
-                                  color: Colors.purple.shade300,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                              const Padding(
+                                padding: EdgeInsets.only(top: 4),
+                                child: Text(
+                                  '⚔️ 3X SHADOW BONUS',
+                                  style: TextStyle(
+                                    color: Colors.purpleAccent,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
                           ],
                         ),
-                        Text(
-                          '+$xpPreview XP',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '+$xpPreview',
+                              style: TextStyle(
                                 color: isShadowMode
-                                    ? Colors.purple.shade300
+                                    ? Colors.purpleAccent
                                     : AppTheme.gold,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
                               ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                'XP',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 32),
-
-                  // Action buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: RPGButton(
-                          text: 'Cancel',
-                          isPrimary: false,
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: RPGButton(
-                          text: _isEditing ? 'Update Quest' : 'Create Quest',
-                          isLoading: _isLoading,
-                          onPressed: _saveQuest,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            MediaQuery.of(context).viewInsets.bottom > 0
+                ? 16
+                : 32, // Adjust for keyboard
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: RPGButton(
+                  text: 'Cancel',
+                  isPrimary: false,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: RPGButton(
+                  text: _isEditing ? 'Update Quest' : 'Create Quest',
+                  isLoading: _isLoading,
+                  onPressed: _saveQuest,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -463,5 +586,76 @@ class _AddQuestScreenState extends ConsumerState<AddQuestScreen> {
         });
       }
     }
+  }
+
+  Widget _buildPremiumTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData icon,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        labelText: label,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: Colors.white.withOpacity(0.3),
+          fontSize: 13,
+        ),
+        labelStyle: TextStyle(
+          color: Colors.white.withOpacity(0.5),
+          fontSize: 13,
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: AppTheme.primaryPurple,
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: AppTheme.primaryPurple, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Colors.black.withOpacity(0.2),
+        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white54, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

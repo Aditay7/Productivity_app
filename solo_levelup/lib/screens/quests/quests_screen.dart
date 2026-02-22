@@ -7,6 +7,7 @@ import '../../data/repositories/quest_repository.dart';
 // Empty
 import '../../core/constants/difficulty.dart';
 import '../../app/theme.dart';
+import '../../widgets/common/no_internet_widget.dart';
 import '../../widgets/quest/quest_timer_widget.dart';
 import 'add_quest_screen.dart';
 import 'quest_timer_screen.dart';
@@ -396,28 +397,38 @@ class _ActiveTab extends ConsumerWidget {
       },
       loading: () =>
           const Center(child: CircularProgressIndicator(color: AppTheme.gold)),
-      error: (e, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Text(
-                '$e'.replaceAll('Exception: ', ''),
-                style: const TextStyle(color: Colors.white54),
-                textAlign: TextAlign.center,
+      error: (e, _) {
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('no internet connection') ||
+            errorString.contains('socketexception') ||
+            errorString.contains('failed host lookup') ||
+            errorString.contains('connection refused')) {
+          return NoInternetWidget(onRetry: () => ref.invalidate(questProvider));
+        }
+
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Text(
+                  '$e'.replaceAll('Exception: ', ''),
+                  style: const TextStyle(color: Colors.white54),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => ref.invalidate(questProvider),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(questProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -603,14 +614,14 @@ class _ActiveQuestCardState extends State<_ActiveQuestCard> {
                 ),
 
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Icon Circle
                       Container(
-                        width: 44,
-                        height: 44,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: const Color(
@@ -627,7 +638,7 @@ class _ActiveQuestCardState extends State<_ActiveQuestCard> {
                         child: Center(
                           child: Text(
                             widget.quest.statType.emoji,
-                            style: const TextStyle(fontSize: 20),
+                            style: const TextStyle(fontSize: 18),
                           ),
                         ),
                       ),
@@ -643,7 +654,7 @@ class _ActiveQuestCardState extends State<_ActiveQuestCard> {
                               widget.quest.title,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: -0.2,
                                 height: 1.2,
@@ -654,12 +665,12 @@ class _ActiveQuestCardState extends State<_ActiveQuestCard> {
 
                             if (widget.quest.description != null &&
                                 widget.quest.description!.isNotEmpty) ...[
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               Text(
                                 widget.quest.description!,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.5),
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w400,
                                 ),
                                 maxLines: 1,
@@ -667,7 +678,7 @@ class _ActiveQuestCardState extends State<_ActiveQuestCard> {
                               ),
                             ],
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
 
                             // Pills Row
                             Wrap(
@@ -746,7 +757,7 @@ class _DoneQuestCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: const Color(0xFF141A2A).withOpacity(0.85), // Muted Background
           borderRadius: BorderRadius.circular(16),
@@ -755,14 +766,14 @@ class _DoneQuestCard extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon Circle (Muted / Checked)
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.02),
@@ -778,7 +789,7 @@ class _DoneQuestCard extends StatelessWidget {
                     child: Icon(
                       Icons.check_rounded,
                       color: Colors.green,
-                      size: 22,
+                      size: 18,
                     ),
                   ),
                 ),
@@ -794,7 +805,7 @@ class _DoneQuestCard extends StatelessWidget {
                         quest.title,
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.6),
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.2,
                           height: 1.2,
@@ -805,24 +816,24 @@ class _DoneQuestCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
 
                       Text(
                         '+${quest.xpReward} XP Earned ✨',
                         style: const TextStyle(
                           color: AppTheme.gold,
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
 
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
 
                       Text(
                         'Completed ${quest.completedAt != null ? _timeAgo(quest.completedAt!) : 'recently'} • Duration ${quest.timeEstimatedMinutes}m',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.4),
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -870,7 +881,7 @@ class _PremiumPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(4),
@@ -880,7 +891,7 @@ class _PremiumPill extends StatelessWidget {
         label,
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),
@@ -917,8 +928,8 @@ class _CircularPulseButtonState extends State<_CircularPulseButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
-          width: 44,
-          height: 44,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: widget.isCompleting || _isHovered
@@ -959,7 +970,7 @@ class _CircularPulseButtonState extends State<_CircularPulseButton> {
                     color: _isHovered
                         ? widget.color
                         : Colors.white.withOpacity(0.6),
-                    size: 20,
+                    size: 18,
                   ),
                 ),
         ),

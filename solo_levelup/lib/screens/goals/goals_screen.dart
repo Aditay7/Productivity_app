@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/goal_provider.dart';
 import '../../app/theme.dart';
+import '../../widgets/common/no_internet_widget.dart';
 import 'create_goal_screen.dart';
 import '../timer/focus_dungeon_screen.dart';
 import '../cardio/cardio_screen.dart';
@@ -89,34 +90,46 @@ class GoalsScreen extends ConsumerWidget {
                     loading: () => const Center(
                       child: CircularProgressIndicator(color: AppTheme.gold),
                     ),
-                    error: (e, _) => Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(height: 12),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
+                    error: (e, _) {
+                      final errorString = e.toString().toLowerCase();
+                      if (errorString.contains('no internet connection') ||
+                          errorString.contains('socketexception') ||
+                          errorString.contains('failed host lookup') ||
+                          errorString.contains('connection refused')) {
+                        return NoInternetWidget(
+                          onRetry: () => ref.invalidate(goalProvider),
+                        );
+                      }
+
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
                             ),
-                            child: Text(
-                              '$e'.replaceAll('Exception: ', ''),
-                              style: const TextStyle(color: Colors.white54),
-                              textAlign: TextAlign.center,
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24.0,
+                              ),
+                              child: Text(
+                                '$e'.replaceAll('Exception: ', ''),
+                                style: const TextStyle(color: Colors.white54),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => ref.invalidate(goalProvider),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => ref.invalidate(goalProvider),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -328,7 +341,7 @@ class _GoalCardState extends State<_GoalCard>
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -336,12 +349,12 @@ class _GoalCardState extends State<_GoalCard>
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: typeColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(_typeIcon(goal.type), color: typeColor, size: 20),
+                  child: Icon(_typeIcon(goal.type), color: typeColor, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -354,7 +367,7 @@ class _GoalCardState extends State<_GoalCard>
                           color: widget.isActive
                               ? Colors.white
                               : Colors.white54,
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           decoration: widget.isActive
                               ? null
@@ -380,14 +393,14 @@ class _GoalCardState extends State<_GoalCard>
                     ? const Icon(
                         Icons.check_circle,
                         color: Colors.green,
-                        size: 26,
+                        size: 22,
                       )
                     : Text(
                         '${progress.toStringAsFixed(0)}%',
                         style: TextStyle(
                           color: typeColor,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 15,
                         ),
                       ),
               ],
@@ -395,17 +408,17 @@ class _GoalCardState extends State<_GoalCard>
 
             // Description
             if ((goal.description as String).isNotEmpty) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 goal.description,
-                style: const TextStyle(color: Colors.white38, fontSize: 12),
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
 
             // Progress bar
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             AnimatedBuilder(
               animation: _anim,
               builder: (_, __) => Stack(

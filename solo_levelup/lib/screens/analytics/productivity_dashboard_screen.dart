@@ -202,7 +202,7 @@ class ProductivityDashboardScreen extends ConsumerWidget {
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final hour = bestTimes.hourCounts[groupIndex].hour;
                         return BarTooltipItem(
-                          '${hour}:00\n${rod.toY.round()} quests',
+                          '$hour:00\n${rod.toY.round()} quests',
                           const TextStyle(color: Colors.white),
                         );
                       },

@@ -170,12 +170,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // Login Button
                           SizedBox(
                             width: double.infinity,
-                            height: 56,
                             child: ElevatedButton(
                               onPressed: authState.isLoading ? null : _login,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryPurple,
                                 foregroundColor: Colors.black,
+                                minimumSize: const Size.fromHeight(56),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),

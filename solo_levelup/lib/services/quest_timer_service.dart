@@ -63,7 +63,7 @@ class QuestTimerService {
         '${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/$questId/timer/stop',
       ),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode({if (focusRating != null) 'focusRating': focusRating}),
+      body: json.encode({'focusRating': ?focusRating}),
     );
 
     if (response.statusCode == 200) {
@@ -84,7 +84,7 @@ class QuestTimerService {
         '${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/$questId/complete-with-timer',
       ),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode({if (focusRating != null) 'focusRating': focusRating}),
+      body: json.encode({'focusRating': ?focusRating}),
     );
 
     if (response.statusCode == 200) {

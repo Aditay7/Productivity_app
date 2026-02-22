@@ -134,7 +134,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // Glassmorphic Form Container
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.03),
                         borderRadius: BorderRadius.circular(24),
@@ -158,7 +158,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             label: 'Player Designation',
                             icon: Icons.person_outline,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           // Email
                           _buildPremiumTextField(
@@ -167,7 +167,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           // Password
                           _buildPremiumTextField(
@@ -176,17 +176,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             icon: Icons.lock_outline,
                             isPassword: true,
                           ),
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 24),
 
                           // Register Button
                           SizedBox(
                             width: double.infinity,
-                            height: 56,
+                            height: 50,
                             child: ElevatedButton(
                               onPressed: authState.isLoading ? null : _register,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryPurple,
                                 foregroundColor: Colors.black,
+                                minimumSize: const Size.fromHeight(56),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -273,6 +274,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       style: const TextStyle(color: Colors.white, fontSize: 16),
       keyboardType: keyboardType,
       decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         labelText: label,
         labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
         floatingLabelStyle: const TextStyle(

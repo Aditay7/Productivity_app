@@ -146,8 +146,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           alignment: Alignment.bottomRight,
                           children: [
                             Container(
-                              width: 140,
-                              height: 140,
+                              width: 110,
+                              height: 110,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppTheme.primaryPurple.withOpacity(0.15),
@@ -169,7 +169,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ),
                               child: profileState.profilePicPath != null
                                   ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(70),
+                                      borderRadius: BorderRadius.circular(55),
                                       child: Image.file(
                                         File(profileState.profilePicPath!),
                                         fit: BoxFit.cover,
@@ -184,16 +184,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         style: const TextStyle(
                                           color: AppTheme.primaryPurple,
                                           fontWeight: FontWeight.w900,
-                                          fontSize: 56,
+                                          fontSize: 48,
                                         ),
                                       ),
                                     ),
                             ),
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(8),
                               margin: const EdgeInsets.only(
-                                right: 8,
-                                bottom: 8,
+                                right: 6,
+                                bottom: 6,
                               ),
                               decoration: BoxDecoration(
                                 color: AppTheme.gold,
@@ -213,18 +213,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               child: const Icon(
                                 Icons.camera_alt,
                                 color: Colors.black87,
-                                size: 22,
+                                size: 18,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
 
                     // Glassmorphic Form Container
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.03),
                         borderRadius: BorderRadius.circular(24),
@@ -248,39 +248,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             label: 'Display Name',
                             icon: Icons.person_outline,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           _buildPremiumTextField(
                             controller: _ageController,
                             label: 'Age',
                             icon: Icons.cake_outlined,
                             keyboardType: TextInputType.number,
-                          ),
-                          const SizedBox(height: 40),
-
-                          SizedBox(
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: _saveProfile,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryPurple,
-                                foregroundColor: Colors.black,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 8,
-                                shadowColor: AppTheme.primaryPurple.withOpacity(
-                                  0.6,
-                                ),
-                              ),
-                              child: const Text(
-                                'SAVE CONFIGURATION',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -291,6 +264,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
         ],
       ),
+      bottomNavigationBar: !profileState.isLoading
+          ? SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  24,
+                  MediaQuery.of(context).viewInsets.bottom > 0 ? 16 : 32,
+                ),
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryPurple,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 8,
+                      shadowColor: AppTheme.primaryPurple.withOpacity(0.6),
+                    ),
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'SAVE CONFIGURATION',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -305,6 +316,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       style: const TextStyle(color: Colors.white, fontSize: 16),
       keyboardType: keyboardType,
       decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         labelText: label,
         labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
         floatingLabelStyle: const TextStyle(

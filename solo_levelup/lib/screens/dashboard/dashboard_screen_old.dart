@@ -372,7 +372,7 @@ class DashboardScreen extends ConsumerWidget {
                 Switch(
                   value: player.isShadowMode,
                   onChanged: (value) => _showShadowModeDialog(context, value),
-                  activeColor: Colors.purple.shade300,
+                  activeThumbColor: Colors.purple.shade300,
                 ),
               ],
             ),
