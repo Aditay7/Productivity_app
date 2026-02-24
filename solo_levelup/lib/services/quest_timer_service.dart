@@ -1,76 +1,78 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import '../core/config/api_config.dart';
 import '../data/models/quest.dart';
 
 /// Service for managing quest timers
 class QuestTimerService {
+  final ApiClient _apiClient = ApiClient();
+
   /// Start quest timer
   Future<Quest> startTimer(String questId) async {
-    final response = await http.post(
-      Uri.parse(
-        '${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/$questId/timer/start',
-      ),
-      headers: {'Content-Type': 'application/json'},
-    );
+    try {
+      final response = await _apiClient.post(
+        '${ApiConfig.questsEndpoint}/$questId/timer/start',
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return Quest.fromMap(data['data']);
-    } else {
-      throw Exception('Failed to start timer: ${response.body}');
+      if (response['success'] == true && response['data'] != null) {
+        return Quest.fromMap(response['data'] as Map<String, dynamic>);
+      }
+      throw Exception(response['message'] ?? 'Failed to start timer');
+    } catch (e) {
+      throw Exception('Failed to start timer: $e');
     }
   }
 
   /// Pause quest timer
   Future<Quest> pauseTimer(String questId) async {
-    final response = await http.post(
-      Uri.parse(
-        '${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/$questId/timer/pause',
-      ),
-      headers: {'Content-Type': 'application/json'},
-    );
+    try {
+      final response = await _apiClient.post(
+        '${ApiConfig.questsEndpoint}/$questId/timer/pause',
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return Quest.fromMap(data['data']);
-    } else {
-      throw Exception('Failed to pause timer: ${response.body}');
+      if (response['success'] == true && response['data'] != null) {
+        return Quest.fromMap(response['data'] as Map<String, dynamic>);
+      }
+      throw Exception(response['message'] ?? 'Failed to pause timer');
+    } catch (e) {
+      throw Exception('Failed to pause timer: $e');
     }
   }
 
   /// Resume quest timer
   Future<Quest> resumeTimer(String questId) async {
-    final response = await http.post(
-      Uri.parse(
-        '${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/$questId/timer/resume',
-      ),
-      headers: {'Content-Type': 'application/json'},
-    );
+    try {
+      final response = await _apiClient.post(
+        '${ApiConfig.questsEndpoint}/$questId/timer/resume',
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return Quest.fromMap(data['data']);
-    } else {
-      throw Exception('Failed to resume timer: ${response.body}');
+      if (response['success'] == true && response['data'] != null) {
+        return Quest.fromMap(response['data'] as Map<String, dynamic>);
+      }
+      throw Exception(response['message'] ?? 'Failed to resume timer');
+    } catch (e) {
+      throw Exception('Failed to resume timer: $e');
     }
   }
 
   /// Stop quest timer
   Future<Quest> stopTimer(String questId, {int? focusRating}) async {
-    final response = await http.post(
-      Uri.parse(
-        '${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/$questId/timer/stop',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'focusRating': ?focusRating}),
-    );
+    try {
+      final body = <String, dynamic>{};
+      if (focusRating != null) {
+        body['focusRating'] = focusRating;
+      }
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return Quest.fromMap(data['data']);
-    } else {
-      throw Exception('Failed to stop timer: ${response.body}');
+      final response = await _apiClient.post(
+        '${ApiConfig.questsEndpoint}/$questId/timer/stop',
+        body: body.isNotEmpty ? body : null,
+      );
+
+      if (response['success'] == true && response['data'] != null) {
+        return Quest.fromMap(response['data'] as Map<String, dynamic>);
+      }
+      throw Exception(response['message'] ?? 'Failed to stop timer');
+    } catch (e) {
+      throw Exception('Failed to stop timer: $e');
     }
   }
 
@@ -79,54 +81,68 @@ class QuestTimerService {
     String questId, {
     int? focusRating,
   }) async {
-    final response = await http.post(
-      Uri.parse(
-        '${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/$questId/complete-with-timer',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'focusRating': ?focusRating}),
-    );
+    try {
+      final body = <String, dynamic>{};
+      if (focusRating != null) {
+        body['focusRating'] = focusRating;
+      }
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return {
-        'quest': Quest.fromMap(data['data']),
-        'skillResult': data['skillResult'],
-      };
-    } else {
-      throw Exception('Failed to complete quest: ${response.body}');
+      final response = await _apiClient.post(
+        '${ApiConfig.questsEndpoint}/$questId/complete-with-timer',
+        body: body.isNotEmpty ? body : null,
+      );
+
+      if (response['success'] == true && response['data'] != null) {
+        return {
+          'quest': Quest.fromMap(response['data'] as Map<String, dynamic>),
+          'skillResult': response['skillResult'],
+        };
+      }
+      throw Exception(response['message'] ?? 'Failed to complete quest');
+    } catch (e) {
+      throw Exception('Failed to complete quest: $e');
     }
   }
 
   /// Get overdue quests
   Future<List<Quest>> getOverdueQuests() async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/overdue'),
-      headers: {'Content-Type': 'application/json'},
-    );
+    try {
+      final response = await _apiClient.get(
+        '${ApiConfig.questsEndpoint}/overdue',
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final List<dynamic> questsJson = data['data'];
-      return questsJson.map((json) => Quest.fromMap(json)).toList();
-    } else {
-      throw Exception('Failed to get overdue quests: ${response.body}');
+      if (response['success'] == true && response['data'] != null) {
+        final List<dynamic> data = response['data'] as List<dynamic>;
+        return data
+            .map((json) => Quest.fromMap(json as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to get overdue quests: $e');
     }
   }
 
   /// Get quests due soon (within 24 hours)
   Future<List<Quest>> getDueSoonQuests() async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}${ApiConfig.questsEndpoint}/due-soon'),
-      headers: {'Content-Type': 'application/json'},
-    );
+    try {
+      final response = await _apiClient.get(
+        '${ApiConfig.questsEndpoint}/due-soon',
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final List<dynamic> questsJson = data['data'];
-      return questsJson.map((json) => Quest.fromMap(json)).toList();
-    } else {
-      throw Exception('Failed to get due soon quests: ${response.body}');
+      if (response['success'] == true && response['data'] != null) {
+        final List<dynamic> data = response['data'] as List<dynamic>;
+        return data
+            .map((json) => Quest.fromMap(json as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to get due soon quests: $e');
     }
+  }
+
+  void dispose() {
+    _apiClient.dispose();
   }
 }

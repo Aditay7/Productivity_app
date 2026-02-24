@@ -327,7 +327,7 @@ class _GoalCardState extends State<_GoalCard>
   @override
   Widget build(BuildContext context) {
     final goal = widget.goal;
-    final progress = goal.progressPercentage as double;
+    final double progress = (goal.progressPercentage as num).toDouble();
     final done = progress >= 100;
     final typeColor = _typeColor(goal.type);
 
