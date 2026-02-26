@@ -3,6 +3,16 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  ApiException({required this.statusCode, required this.message});
+
+  @override
+  String toString() => message;
+}
+
 class ApiClient {
   final http.Client _client = http.Client();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -25,6 +35,8 @@ class ApiClient {
           .timeout(ApiConfig.timeout);
 
       return _handleResponse(response);
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('GET request failed: $e');
     }
@@ -46,6 +58,8 @@ class ApiClient {
           .timeout(ApiConfig.timeout);
 
       return _handleResponse(response);
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('POST request failed: $e');
     }
@@ -67,6 +81,8 @@ class ApiClient {
           .timeout(ApiConfig.timeout);
 
       return _handleResponse(response);
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('PUT request failed: $e');
     }
@@ -81,6 +97,8 @@ class ApiClient {
           .timeout(ApiConfig.timeout);
 
       return _handleResponse(response);
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('DELETE request failed: $e');
     }
@@ -92,8 +110,16 @@ class ApiClient {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       return data;
     } else {
-      final error = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(error['message'] ?? error['error'] ?? 'Request failed');
+      Map<String, dynamic> error = {};
+      try {
+        error = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        error = {'message': response.body};
+      }
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: error['message'] ?? error['error'] ?? 'Request failed',
+      );
     }
   }
 

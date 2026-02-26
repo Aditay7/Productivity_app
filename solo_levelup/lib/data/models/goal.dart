@@ -40,7 +40,10 @@ class Goal {
 
   bool get isActive {
     final now = DateTime.now();
-    return !isCompleted && now.isAfter(startDate) && now.isBefore(endDate);
+    // Use compareTo to handle exact matches, though now is usually strictly after
+    return !isCompleted &&
+        now.compareTo(startDate) >= 0 &&
+        now.compareTo(endDate) <= 0;
   }
 
   factory Goal.fromMap(Map<String, dynamic> map) {
@@ -57,13 +60,13 @@ class Goal {
       endDate: DateTime.parse(map['endDate'] as String),
       milestones: map['milestones'] != null
           ? (map['milestones'] as List)
-              .map((m) => Milestone.fromMap(m as Map<String, dynamic>))
-              .toList()
+                .map((m) => Milestone.fromMap(m as Map<String, dynamic>))
+                .toList()
           : [],
       achievements: map['achievements'] != null
           ? (map['achievements'] as List)
-              .map((a) => GoalAchievement.fromMap(a as Map<String, dynamic>))
-              .toList()
+                .map((a) => GoalAchievement.fromMap(a as Map<String, dynamic>))
+                .toList()
           : [],
       isCompleted: map['isCompleted'] as bool? ?? false,
       completedAt: map['completedAt'] != null
@@ -83,12 +86,12 @@ class Goal {
       'targetValue': targetValue,
       'currentValue': currentValue,
       'unit': unit.value,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
+      'startDate': startDate.toUtc().toIso8601String(),
+      'endDate': endDate.toUtc().toIso8601String(),
       'milestones': milestones.map((m) => m.toMap()).toList(),
       'isCompleted': isCompleted,
-      'completedAt': completedAt?.toIso8601String(),
-      'createdAt': createdAt.toIso8601String(),
+      'completedAt': completedAt?.toUtc().toIso8601String(),
+      'createdAt': createdAt.toUtc().toIso8601String(),
     };
   }
 
@@ -156,7 +159,7 @@ class Milestone {
       'value': value,
       'label': label,
       'reached': reached,
-      'reachedAt': reachedAt?.toIso8601String(),
+      'reachedAt': reachedAt?.toUtc().toIso8601String(),
     };
   }
 }
@@ -187,7 +190,7 @@ class GoalAchievement {
     return {
       'title': title,
       'description': description,
-      'unlockedAt': unlockedAt.toIso8601String(),
+      'unlockedAt': unlockedAt.toUtc().toIso8601String(),
       if (milestoneValue != null) 'milestoneValue': milestoneValue,
     };
   }

@@ -27,34 +27,52 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
 
   /// Start timer for a quest
   Future<void> startTimer(Quest quest) async {
-    state = const AsyncValue.loading();
+    // Optimistic UI Update
+    final optimisticQuest = quest.copyWith(
+      timerState: TimerState.running,
+      timeStarted: DateTime.now(),
+    );
+    state = AsyncValue.data(optimisticQuest);
+    ref.read(activeTimerQuestProvider.notifier).state = optimisticQuest;
+    ref.read(isTimerRunningProvider.notifier).state = true;
+    startElapsedTimeCounter(optimisticQuest);
+
     try {
       final updatedQuest = await _timerService.startTimer(quest.id!);
       state = AsyncValue.data(updatedQuest);
       ref.read(activeTimerQuestProvider.notifier).state = updatedQuest;
-      ref.read(isTimerRunningProvider.notifier).state = true;
 
-      // Start elapsed time counter
-      startElapsedTimeCounter(updatedQuest);
-      
       // Refresh quest list
       ref.invalidate(questProvider);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+      // Revert optimistic update
+      ref.read(activeTimerQuestProvider.notifier).state = null;
+      ref.read(isTimerRunningProvider.notifier).state = false;
+      _stopElapsedTimeCounter();
     }
   }
 
   /// Pause timer
   Future<void> pauseTimer(String questId) async {
+    // Optimistic UI Update
+    final currentActive = ref.read(activeTimerQuestProvider);
+    if (currentActive?.id == questId) {
+      final optimisticQuest = currentActive!.copyWith(
+        timerState: TimerState.paused,
+      );
+      state = AsyncValue.data(optimisticQuest);
+      ref.read(activeTimerQuestProvider.notifier).state = optimisticQuest;
+      ref.read(isTimerRunningProvider.notifier).state = false;
+      _stopElapsedTimeCounter();
+    }
+
     try {
       final updatedQuest = await _timerService.pauseTimer(questId);
       state = AsyncValue.data(updatedQuest);
       ref.read(activeTimerQuestProvider.notifier).state = updatedQuest;
       ref.read(isTimerRunningProvider.notifier).state = false;
 
-      // Stop elapsed time counter
-      _stopElapsedTimeCounter();
-      
       // Refresh quest list
       ref.invalidate(questProvider);
     } catch (e, stack) {
@@ -64,15 +82,25 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
 
   /// Resume timer
   Future<void> resumeTimer(String questId) async {
+    // Optimistic UI Update
+    final currentActive = ref.read(activeTimerQuestProvider);
+    if (currentActive?.id == questId) {
+      final optimisticQuest = currentActive!.copyWith(
+        timerState: TimerState.running,
+      );
+      state = AsyncValue.data(optimisticQuest);
+      ref.read(activeTimerQuestProvider.notifier).state = optimisticQuest;
+      ref.read(isTimerRunningProvider.notifier).state = true;
+      startElapsedTimeCounter(optimisticQuest);
+    }
+
     try {
       final updatedQuest = await _timerService.resumeTimer(questId);
       state = AsyncValue.data(updatedQuest);
       ref.read(activeTimerQuestProvider.notifier).state = updatedQuest;
       ref.read(isTimerRunningProvider.notifier).state = true;
-
-      // Restart elapsed time counter
       startElapsedTimeCounter(updatedQuest);
-      
+
       // Refresh quest list
       ref.invalidate(questProvider);
     } catch (e, stack) {
@@ -82,6 +110,14 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
 
   /// Stop timer
   Future<void> stopTimer(String questId, {int? focusRating}) async {
+    // Optimistic UI Update
+    final currentActive = ref.read(activeTimerQuestProvider);
+    if (currentActive?.id == questId) {
+      ref.read(activeTimerQuestProvider.notifier).state = null;
+      ref.read(isTimerRunningProvider.notifier).state = false;
+      _stopElapsedTimeCounter();
+    }
+
     try {
       final updatedQuest = await _timerService.stopTimer(
         questId,
@@ -92,9 +128,6 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
       ref.read(isTimerRunningProvider.notifier).state = false;
       ref.read(elapsedTimeProvider.notifier).state = 0;
 
-      // Stop elapsed time counter
-      _stopElapsedTimeCounter();
-      
       // Refresh quest list
       ref.invalidate(questProvider);
     } catch (e, stack) {
@@ -107,6 +140,14 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
     String questId, {
     int? focusRating,
   }) async {
+    // Optimistic UI Update
+    final currentActive = ref.read(activeTimerQuestProvider);
+    if (currentActive?.id == questId) {
+      ref.read(activeTimerQuestProvider.notifier).state = null;
+      ref.read(isTimerRunningProvider.notifier).state = false;
+      _stopElapsedTimeCounter();
+    }
+
     try {
       final result = await _timerService.completeQuestWithTimer(
         questId,
@@ -117,9 +158,6 @@ class QuestTimerNotifier extends StateNotifier<AsyncValue<Quest?>> {
       ref.read(isTimerRunningProvider.notifier).state = false;
       ref.read(elapsedTimeProvider.notifier).state = 0;
 
-      // Stop elapsed time counter
-      _stopElapsedTimeCounter();
-      
       // Refresh quest list
       ref.invalidate(questProvider);
 

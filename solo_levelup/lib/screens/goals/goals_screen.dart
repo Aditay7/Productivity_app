@@ -36,9 +36,11 @@ class GoalsScreen extends ConsumerWidget {
                 Expanded(
                   child: goalsAsync.when(
                     data: (goals) {
-                      final active = goals.where((g) => g.isActive).toList();
+                      final active = goals
+                          .where((g) => !g.isCompleted)
+                          .toList();
                       final completed = goals
-                          .where((g) => !g.isActive)
+                          .where((g) => g.isCompleted)
                           .toList();
 
                       if (active.isEmpty && completed.isEmpty) {
