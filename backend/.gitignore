@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+
+# Serverless Framework (auto-generated, do not commit)
+.serverless/
 dist/
 *.log
 
