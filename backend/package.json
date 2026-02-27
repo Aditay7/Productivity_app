@@ -7,16 +7,22 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "seed": "node src/utils/seed.js"
+    "seed": "node src/utils/seed.js",
+    "deploy": "serverless deploy --stage prod",
+    "deploy:dev": "serverless deploy --stage dev",
+    "logs": "serverless logs -f api --stage prod --tail"
   },
   "keywords": [
     "express",
     "mongodb",
-    "api"
+    "api",
+    "serverless",
+    "aws-lambda"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@vendia/serverless-express": "^4.12.6",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",
@@ -25,6 +31,8 @@
     "mongoose": "^8.1.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.3"
+    "nodemon": "^3.0.3",
+    "serverless": "^3.40.0"
   }
 }
+

@@ -1,0 +1,11 @@
+# Exclude from Lambda deployment package
+node_modules/.cache
+**/*.test.js
+**/*.spec.js
+backend.log
+.env
+.env.*
+test-api.sh
+README.md
+.DS_Store
+.git/**

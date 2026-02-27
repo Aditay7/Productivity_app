@@ -1,0 +1,64 @@
+service: solo-levelup-backend
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1       # Mumbai — lowest latency for India
+  stage: ${opt:stage, 'prod'}
+  memorySize: 512          # MB — increase if you see memory issues
+  timeout: 29              # seconds — API GW max is 29s
+
+  # HTTP API (v2) — cheaper and faster than REST API
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Requested-With
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+
+  # Environment variables — pulled from SSM Parameter Store at deploy time
+  environment:
+    NODE_ENV: production
+    MONGODB_URI: ${ssm:/solo-levelup/MONGODB_URI}
+    JWT_SECRET: ${ssm:/solo-levelup/JWT_SECRET}
+
+  # IAM permissions for SSM (only needed if you add runtime SSM lookups later)
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+          Resource:
+            - arn:aws:ssm:ap-south-1:*:parameter/solo-levelup/*
+
+functions:
+  api:
+    handler: handler.handler
+    description: Solo Leveling productivity app backend API
+    events:
+      - httpApi: '*'      # Catch-all — API Gateway routes everything to Express
+
+package:
+  # Only include what is needed — keeps bundle size small and deploy fast
+  patterns:
+    - '!node_modules/.cache/**'
+    - '!**/*.test.js'
+    - '!**/*.spec.js'
+    - '!backend.log'
+    - '!.env'
+    - '!test-api.sh'
+    - '!README.md'
+    - '!.DS_Store'

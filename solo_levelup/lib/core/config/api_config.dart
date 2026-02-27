@@ -1,7 +1,7 @@
 class ApiConfig {
-  // Backend API base URL
+  // Backend API base URL — AWS Lambda (ap-south-1 Mumbai)
   static const String baseUrl =
-      'https://productivity-app-ht2f.onrender.com/api';
+      'https://le1wyl8im8.execute-api.ap-south-1.amazonaws.com/api';
 
   // API Endpoints
   static const String playerEndpoint = '/player';
